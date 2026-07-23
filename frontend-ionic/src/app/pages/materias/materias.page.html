@@ -1,0 +1,190 @@
+<ion-header>
+  <ion-toolbar class="barra-superior">
+    <div class="barra-contenido">
+
+      <div class="marca">
+        <span class="marca-icono">✓</span>
+        <span>GestorTareas</span>
+      </div>
+
+      <div class="sesion">
+        <span class="avatar">
+          {{ obtenerIniciales() }}
+        </span>
+
+        <div class="datos-usuario">
+          <strong>
+            {{ usuario?.nombre || 'Usuario' }}
+          </strong>
+
+          <span>
+            {{ fechaActual }}
+          </span>
+        </div>
+
+        <ion-button
+          fill="clear"
+          size="small"
+          class="boton-salir"
+          (click)="cerrarSesion()">
+          Salir
+        </ion-button>
+      </div>
+
+    </div>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content>
+
+  <section class="hero">
+    <div class="hero-contenido">
+      <h1>Mis Materias</h1>
+
+      <p>
+        Selecciona una materia para ver y gestionar
+        sus deberes
+      </p>
+
+      <div class="resumen">
+
+        <div class="resumen-item">
+          <strong>{{ estadisticas.total }}</strong>
+          <span>Tareas totales</span>
+        </div>
+
+        <div class="resumen-item">
+          <strong>{{ estadisticas.pendientes }}</strong>
+          <span>Pendientes</span>
+        </div>
+
+        <div class="resumen-item resumen-alerta">
+          <strong>{{ estadisticas.vencidas }}</strong>
+          <span>Atrasadas</span>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <main class="contenido">
+
+    <ion-searchbar
+      [(ngModel)]="textoBusqueda"
+      placeholder="Buscar materia..."
+      animated="true"
+      showClearButton="focus"
+      class="buscador">
+    </ion-searchbar>
+
+    @if (cargando) {
+      <div class="estado">
+        <ion-spinner name="crescent"></ion-spinner>
+        <p>Cargando materias...</p>
+      </div>
+    }
+
+    @if (!cargando && mensajeError) {
+      <div class="estado">
+        <ion-text color="danger">
+          <p>{{ mensajeError }}</p>
+        </ion-text>
+
+        <ion-button
+          fill="outline"
+          (click)="cargarDatos()">
+          Reintentar
+        </ion-button>
+      </div>
+    }
+
+    @if (
+      !cargando &&
+      !mensajeError &&
+      materiasFiltradas.length === 0
+    ) {
+      <div class="estado">
+        <h2>No hay materias</h2>
+
+        <p>
+          @if (materias.length === 0) {
+            Todavía no tienes materias registradas.
+          } @else {
+            No existen materias que coincidan
+            con la búsqueda.
+          }
+        </p>
+      </div>
+    }
+
+    @if (
+      !cargando &&
+      !mensajeError &&
+      materiasFiltradas.length > 0
+    ) {
+      <div class="materias-grid">
+
+        @for (
+          materia of materiasFiltradas;
+          track materia.id
+        ) {
+          <ion-card class="materia-card">
+
+            <div
+              class="materia-banner"
+              [style.background]="
+                obtenerColorMateria(materia.id)
+              ">
+            </div>
+
+            <ion-card-content class="materia-body">
+
+              <h2>{{ materia.nombre }}</h2>
+
+              <p class="profesor">
+                Profesor:
+                {{ materia.profesor || 'Sin asignar' }}
+              </p>
+
+              <div class="estadisticas-materia">
+
+                <div>
+                  <strong>{{ materia.total }}</strong>
+                  <span>Total</span>
+                </div>
+
+                <div>
+                  <strong>{{ materia.pendientes }}</strong>
+                  <span>Pendientes</span>
+                </div>
+
+                <div>
+                  <strong>{{ materia.completadas }}</strong>
+                  <span>Listas</span>
+                </div>
+
+              </div>
+
+              <div class="progreso-cabecera">
+                <span>Progreso</span>
+
+                <strong>
+                  {{ obtenerPorcentaje(materia) }}%
+                </strong>
+              </div>
+
+              <ion-progress-bar
+                [value]="obtenerProgreso(materia)">
+              </ion-progress-bar>
+
+            </ion-card-content>
+
+          </ion-card>
+        }
+
+      </div>
+    }
+
+  </main>
+
+</ion-content>
