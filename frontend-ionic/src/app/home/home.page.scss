@@ -1,0 +1,265 @@
+:host {
+  --primary: #1e3a5f;
+  --primary-dark: #142944;
+  --primary-light: #eaeff5;
+  --gray-100: #eef0f3;
+  --gray-200: #dde1e7;
+  --gray-500: #5f6b7a;
+  --gray-900: #101820;
+}
+
+ion-content {
+  --background: linear-gradient(
+    120deg,
+    var(--primary) 0%,
+    var(--primary-dark) 100%
+  );
+}
+
+.login-pagina {
+  position: relative;
+  min-height: 100%;
+  overflow: hidden;
+  padding:
+    max(24px, env(safe-area-inset-top))
+    18px
+    max(24px, env(safe-area-inset-bottom));
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.decoracion-fondo {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.edificio {
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  width: 900px;
+  max-width: none;
+  height: 42%;
+  min-height: 220px;
+  transform: translateX(-50%);
+}
+
+.edificio-cuerpo {
+  fill: rgba(255, 255, 255, 0.08);
+}
+
+.edificio-base {
+  fill: rgba(255, 255, 255, 0.16);
+}
+
+.edificio-columna {
+  fill: rgba(255, 255, 255, 0.15);
+}
+
+.edificio-puerta {
+  fill: rgba(15, 23, 42, 0.28);
+}
+
+.edificio-reloj {
+  fill: rgba(255, 255, 255, 0.07);
+  stroke: rgba(255, 255, 255, 0.22);
+  stroke-width: 2;
+}
+
+.reloj-linea {
+  stroke: rgba(255, 255, 255, 0.3);
+  stroke-width: 2;
+  stroke-linecap: round;
+}
+
+.icono-flotante {
+  position: absolute;
+  color: rgba(255, 255, 255, 0.12);
+  animation: flotar 14s ease-in-out infinite;
+}
+
+.icono-flotante svg {
+  width: 55px;
+  height: 55px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.5;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.icono-libro {
+  top: 10%;
+  left: 8%;
+}
+
+.icono-graduacion {
+  top: 18%;
+  right: 7%;
+  animation-delay: -5s;
+}
+
+.icono-tarea {
+  bottom: 20%;
+  left: 7%;
+  animation-delay: -9s;
+}
+
+@keyframes flotar {
+  0%,
+  100% {
+    transform: translate(0, 0) rotate(0deg);
+  }
+
+  50% {
+    transform: translate(12px, -18px) rotate(5deg);
+  }
+}
+
+.login-card {
+  position: relative;
+  z-index: 2;
+  width: 100%;
+  max-width: 390px;
+  padding: 30px 24px 25px;
+  border-radius: 16px;
+  background: #ffffff;
+  box-shadow: 0 22px 55px rgba(8, 18, 32, 0.35);
+}
+
+.login-logo {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  margin-bottom: 7px;
+}
+
+.logo-icono {
+  width: 40px;
+  height: 40px;
+  border-radius: 9px;
+  background: var(--primary-light);
+  color: var(--primary);
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.logo-icono svg {
+  width: 23px;
+  height: 23px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.login-logo h1 {
+  margin: 0;
+  color: var(--primary);
+  font-size: 22px;
+  font-weight: 700;
+}
+
+.login-subtitulo {
+  margin: 0 0 24px;
+  color: var(--gray-500);
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.campo-grupo {
+  margin-bottom: 17px;
+}
+
+.campo-grupo label {
+  display: block;
+  margin: 0 0 7px 2px;
+  color: var(--gray-900);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.campo {
+  --min-height: 50px;
+  --background: #ffffff;
+  --border-radius: 9px;
+  --padding-start: 13px;
+  --inner-padding-end: 10px;
+
+  border: 1px solid var(--gray-200);
+  border-radius: 9px;
+  transition:
+    border-color 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+.campo:focus-within {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(30, 58, 95, 0.12);
+}
+
+ion-input {
+  --color: var(--gray-900);
+  --placeholder-color: #8893a0;
+  --placeholder-opacity: 1;
+  font-size: 14px;
+}
+
+.mensaje-contenedor {
+  min-height: 25px;
+}
+
+.mensaje-contenedor p {
+  margin: 2px 0 7px;
+  font-size: 12.5px;
+  line-height: 1.4;
+}
+
+.boton-login {
+  height: 47px;
+  margin: 4px 0 0;
+  --background: var(--primary);
+  --background-hover: var(--primary-dark);
+  --background-activated: var(--primary-dark);
+  --border-radius: 9px;
+  --box-shadow: none;
+  font-size: 14px;
+  font-weight: 700;
+  text-transform: none;
+}
+
+.boton-login ion-spinner {
+  width: 19px;
+  height: 19px;
+  margin-right: 9px;
+}
+
+.pie-login {
+  margin: 20px 0 0;
+  color: #84909d;
+  font-size: 10.5px;
+  text-align: center;
+}
+
+@media (min-width: 700px) {
+  .login-card {
+    padding: 36px 32px 30px;
+  }
+
+  .login-logo h1 {
+    font-size: 23px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .icono-flotante {
+    animation: none;
+  }
+}

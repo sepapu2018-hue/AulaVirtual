@@ -1,0 +1,220 @@
+<ion-content [fullscreen]="true">
+
+  <main class="login-pagina">
+
+    <div class="decoracion-fondo" aria-hidden="true">
+
+      <span class="icono-flotante icono-libro">
+        <svg viewBox="0 0 24 24">
+          <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/>
+          <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>
+        </svg>
+      </span>
+
+      <span class="icono-flotante icono-graduacion">
+        <svg viewBox="0 0 24 24">
+          <path d="M22 10 12 5 2 10l10 5 10-5z"/>
+          <path d="M6 12v5c0 1.5 3 3 6 3s6-1.5 6-3v-5"/>
+        </svg>
+      </span>
+
+      <span class="icono-flotante icono-tarea">
+        <svg viewBox="0 0 24 24">
+          <rect x="4" y="3" width="16" height="18" rx="2"/>
+          <path d="m8 12 2 2 5-5"/>
+          <path d="M8 7h8"/>
+        </svg>
+      </span>
+
+      <svg
+        class="edificio"
+        viewBox="0 0 800 260"
+        preserveAspectRatio="xMidYMax slice">
+
+        <rect
+          x="0"
+          y="238"
+          width="800"
+          height="4"
+          class="edificio-base">
+        </rect>
+
+        <rect
+          x="180"
+          y="105"
+          width="440"
+          height="133"
+          class="edificio-cuerpo">
+        </rect>
+
+        <polygon
+          points="180,105 620,105 400,35"
+          class="edificio-cuerpo">
+        </polygon>
+
+        <rect
+          x="235"
+          y="120"
+          width="18"
+          height="118"
+          class="edificio-columna">
+        </rect>
+
+        <rect
+          x="300"
+          y="120"
+          width="18"
+          height="118"
+          class="edificio-columna">
+        </rect>
+
+        <rect
+          x="365"
+          y="120"
+          width="18"
+          height="118"
+          class="edificio-columna">
+        </rect>
+
+        <rect
+          x="430"
+          y="120"
+          width="18"
+          height="118"
+          class="edificio-columna">
+        </rect>
+
+        <rect
+          x="495"
+          y="120"
+          width="18"
+          height="118"
+          class="edificio-columna">
+        </rect>
+
+        <rect
+          x="560"
+          y="120"
+          width="18"
+          height="118"
+          class="edificio-columna">
+        </rect>
+
+        <path
+          d="M360 238 V190 A40 40 0 0 1 440 190 V238 Z"
+          class="edificio-puerta">
+        </path>
+
+        <circle
+          cx="400"
+          cy="88"
+          r="18"
+          class="edificio-reloj">
+        </circle>
+
+        <line
+          x1="400"
+          y1="88"
+          x2="400"
+          y2="77"
+          class="reloj-linea">
+        </line>
+
+        <line
+          x1="400"
+          y1="88"
+          x2="409"
+          y2="93"
+          class="reloj-linea">
+        </line>
+
+      </svg>
+
+    </div>
+
+    <section class="login-card">
+
+      <div class="login-logo">
+        <span class="logo-icono">
+          <svg viewBox="0 0 24 24">
+            <path d="m9 11 3 3L22 4"/>
+            <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>
+          </svg>
+        </span>
+
+        <h1>GestorTareas</h1>
+      </div>
+
+      <p class="login-subtitulo">
+        Inicia sesión para ver tus materias y deberes
+      </p>
+
+      <form (ngSubmit)="iniciarSesion()">
+
+        <div class="campo-grupo">
+          <label for="correo">Correo</label>
+
+          <ion-item lines="none" class="campo">
+            <ion-input
+              id="correo"
+              type="email"
+              name="correo"
+              [(ngModel)]="correo"
+              placeholder="tu@correo.com"
+              autocomplete="email"
+              inputmode="email"
+              [disabled]="cargando">
+            </ion-input>
+          </ion-item>
+        </div>
+
+        <div class="campo-grupo">
+          <label for="password">Contraseña</label>
+
+          <ion-item lines="none" class="campo">
+            <ion-input
+              id="password"
+              type="password"
+              name="password"
+              [(ngModel)]="password"
+              placeholder="••••••••"
+              autocomplete="current-password"
+              [disabled]="cargando">
+            </ion-input>
+          </ion-item>
+        </div>
+
+        <div class="mensaje-contenedor">
+          @if (mensaje) {
+            <ion-text [color]="tipoMensaje">
+              <p>{{ mensaje }}</p>
+            </ion-text>
+          }
+        </div>
+
+        <ion-button
+          type="submit"
+          expand="block"
+          class="boton-login"
+          [disabled]="cargando">
+
+          @if (cargando) {
+            <ion-spinner name="crescent"></ion-spinner>
+            <span>Ingresando...</span>
+          } @else {
+            Iniciar sesión
+          }
+
+        </ion-button>
+
+      </form>
+
+      <p class="pie-login">
+        Aula virtual para la gestión de materias y tareas
+      </p>
+
+    </section>
+
+  </main>
+
+</ion-content>
