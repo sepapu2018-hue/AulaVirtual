@@ -41,5 +41,6 @@ jobs:
           key: ${{ secrets.EC2_SSH_KEY }}
           script: |
             cd ~/gestortareas
+            curl -fsSL -o docker-compose.yml https://raw.githubusercontent.com/sepapu2018-hue/gestordetareraspractica-/main/docker-compose.yml
             sudo docker compose pull
             sudo docker compose up -d
