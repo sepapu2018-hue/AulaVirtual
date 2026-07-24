@@ -99,6 +99,7 @@
       </div>
       <div class="topbar-derecha">
         <button type="button" class="btn-texto" id="btn-gestionar-estudiantes" style="display:none">Gestionar estudiantes</button>
+        <button type="button" class="btn-texto" id="btn-gestionar-profesores" style="display:none">Gestionar profesores</button>
         <div class="sesion-chip">
           <span class="sesion-avatar" id="sesion-avatar">GT</span>
           <div class="sesion-texto">
@@ -514,6 +515,34 @@
 
       <div class="modal-botones">
         <button type="button" class="btn-secondary" id="inscripcion-modal-cerrar">Cerrar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: gestionar cuentas de profesor (solo admin) -->
+  <div class="modal-overlay" id="profesores-modal-overlay">
+    <div class="modal modal-usuarios">
+      <h3>Profesores</h3>
+      <p class="modal-usuarios-sub">Crea cuentas de profesor. Cada profesor solo ve y administra sus propias materias.</p>
+
+      <form id="form-profesor" class="form-usuario">
+        <input type="text" id="profesor-nombre" placeholder="Nombre completo" required>
+        <input type="email" id="profesor-correo" placeholder="Correo" required>
+        <input type="text" id="profesor-password" placeholder="Contraseña" autocomplete="off" required>
+        <div class="botones">
+          <button type="submit" class="btn-primary">Crear profesor</button>
+        </div>
+      </form>
+
+      <div class="usuarios-lista-header">
+        <h4>Profesores registrados</h4>
+      </div>
+      <div id="lista-profesores">
+        <div class="cargando" id="profesores-cargando"><span class="spinner"></span> Cargando...</div>
+      </div>
+
+      <div class="modal-botones">
+        <button type="button" class="btn-secondary" id="profesores-modal-cerrar">Cerrar</button>
       </div>
     </div>
   </div>

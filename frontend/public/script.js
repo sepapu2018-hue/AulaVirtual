@@ -37,6 +37,10 @@ function obtenerSesion() {
   }
 }
 
+function esDocente(usuario) {
+  return !!usuario && (usuario.rol === 'admin' || usuario.rol === 'profesor');
+}
+
 function mostrarLogin() {
   document.getElementById('vista-login').style.display = 'flex';
   document.getElementById('topbar').style.display = 'none';
@@ -62,8 +66,9 @@ function iniciarApp(usuario) {
   document.getElementById('sesion-nombre').textContent = usuario.nombre;
   document.getElementById('sesion-avatar').textContent = usuario.nombre.trim().slice(0, 2).toUpperCase();
   document.getElementById('btn-gestionar-estudiantes').style.display = usuario.rol === 'admin' ? '' : 'none';
-  document.getElementById('form-anuncio').style.display = usuario.rol === 'admin' ? '' : 'none';
-  document.getElementById('btn-nueva-materia').style.display = usuario.rol === 'admin' ? '' : 'none';
+  document.getElementById('form-anuncio').style.display = esDocente(usuario) ? '' : 'none';
+  document.getElementById('btn-nueva-materia').style.display = esDocente(usuario) ? '' : 'none';
+  document.getElementById('btn-gestionar-profesores').style.display = usuario.rol === 'admin' ? '' : 'none';
   mostrarVista('materias');
   cargarMaterias();
   cargarResumenGlobal();
@@ -260,7 +265,7 @@ function render(tareas) {
   lista.innerHTML = '';
   tareas.forEach(t => {
     const prioridad = t.prioridad || 'media';
-    const esAdmin = usuarioActual && usuarioActual.rol === 'admin';
+    const esAdmin = esDocente(usuarioActual);
     const tieneNota = t.mi_nota !== null && t.mi_nota !== undefined;
     const plazoVencido = t.fecha_limite && t.fecha_limite.split('T')[0] < hoy;
     const bloqueada = !esAdmin && (tieneNota || plazoVencido);
@@ -559,6 +564,10 @@ document.getElementById('modal-confirmar').addEventListener('click', async () =>
     await fetch(`${API_URL_USUARIOS}/${accion.id}`, { method: 'DELETE' });
     mostrarToast('Cuenta eliminada');
     cargarEstudiantes();
+  } else if (accion.tipo === 'profesor') {
+    await fetch(`/api/usuarios/profesores/${accion.id}`, { method: 'DELETE' });
+    mostrarToast('Profesor eliminado');
+    cargarProfesores();
   }
 });
 
@@ -648,6 +657,84 @@ document.getElementById('form-usuario').addEventListener('submit', async (e) => 
   }
 });
 
+function abrirModalProfesores() {
+  document.getElementById('form-profesor').reset();
+  document.getElementById('profesores-modal-overlay').classList.add('visible');
+  cargarProfesores();
+}
+
+function cerrarModalProfesores() {
+  document.getElementById('profesores-modal-overlay').classList.remove('visible');
+}
+
+async function cargarProfesores() {
+  try {
+    const res = await fetch('/api/usuarios/profesores');
+    const profesores = await res.json();
+    renderProfesores(profesores);
+  } catch (err) {
+    document.getElementById('lista-profesores').innerHTML = '<div class="usuarios-vacio">No se pudo cargar la lista.</div>';
+  }
+}
+
+function renderProfesores(profesores) {
+  const cont = document.getElementById('lista-profesores');
+  if (!profesores.length) {
+    cont.innerHTML = '<div class="usuarios-vacio">Todavía no has creado ninguna cuenta de profesor.</div>';
+    return;
+  }
+  cont.innerHTML = profesores.map(p => `
+    <div class="usuario-row">
+      <span class="usuario-row-avatar">${escapeHtml(p.nombre.trim().slice(0, 2).toUpperCase())}</span>
+      <div class="usuario-row-info">
+        <strong>${escapeHtml(p.nombre)}</strong>
+        <span>${escapeHtml(p.correo)}</span>
+      </div>
+      <button class="icon-btn" data-action="eliminar-profesor" data-id="${p.id}" title="Eliminar cuenta">${ICONO_BASURA}</button>
+    </div>
+  `).join('');
+}
+
+document.getElementById('btn-gestionar-profesores').addEventListener('click', abrirModalProfesores);
+document.getElementById('profesores-modal-cerrar').addEventListener('click', cerrarModalProfesores);
+document.getElementById('profesores-modal-overlay').addEventListener('click', (e) => {
+  if (e.target.id === 'profesores-modal-overlay') cerrarModalProfesores();
+});
+
+document.getElementById('form-profesor').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const nombre = document.getElementById('profesor-nombre').value.trim();
+  const correo = document.getElementById('profesor-correo').value.trim();
+  const password = document.getElementById('profesor-password').value;
+  if (!nombre || !correo || !password) return;
+  try {
+    const res = await fetch('/api/usuarios/profesores', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ nombre, correo, password })
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      mostrarToast(data.error || 'No se pudo crear la cuenta', 'error');
+      return;
+    }
+    mostrarToast('Profesor creado correctamente');
+    document.getElementById('form-profesor').reset();
+    cargarProfesores();
+  } catch (err) {
+    mostrarToast('Ocurrió un error, intenta de nuevo', 'error');
+  }
+});
+
+document.getElementById('lista-profesores').addEventListener('click', (e) => {
+  const btn = e.target.closest('button[data-action]');
+  if (!btn || btn.dataset.action !== 'eliminar-profesor') return;
+  accionEliminar = { tipo: 'profesor', id: btn.dataset.id };
+  document.getElementById('modal-titulo').textContent = '¿Eliminar esta cuenta de profesor?';
+  document.getElementById('modal-texto').textContent = 'Se eliminarán también todas sus materias, tareas y anuncios. Esta acción no se puede deshacer.';
+  document.getElementById('modal-overlay').classList.add('visible');
+});
+
 document.getElementById('lista-usuarios').addEventListener('click', (e) => {
   const btn = e.target.closest('button[data-action]');
   if (!btn) return;
@@ -709,7 +796,7 @@ function abrirDetalle(id) {
   pintarDetalle(t);
   document.getElementById('detalle-overlay').classList.add('visible');
   document.getElementById('detalle-seccion-registro').style.display =
-    (usuarioActual && usuarioActual.rol === 'admin') ? '' : 'none';
+    esDocente(usuarioActual) ? '' : 'none';
   cargarDetalleArchivos(id);
   cargarComentarios(id);
 }
@@ -745,7 +832,7 @@ async function cargarDetalleArchivos(id) {
     const res = await fetch(`${API_URL}/${id}`);
     const t = await res.json();
     if (String(idDetalleAbierto) !== String(id)) return;
-    const esAdmin = usuarioActual && usuarioActual.rol === 'admin';
+    const esAdmin = esDocente(usuarioActual);
     const tieneNota = t.mi_nota !== null && t.mi_nota !== undefined;
     const plazoVencido = t.fecha_limite && t.fecha_limite.split('T')[0] < fechaLocalHoy();
     entregaBloqueadaActual = !esAdmin && (tieneNota || plazoVencido);
@@ -757,7 +844,7 @@ async function cargarDetalleArchivos(id) {
       ? 'Esta tarea ya fue calificada. No puedes modificar tu entrega.'
       : 'El plazo de entrega ya venció. No puedes modificar tu entrega.';
     msgBloqueo.style.display = entregaBloqueadaActual ? 'block' : 'none';
-    if (usuarioActual && usuarioActual.rol === 'admin') cargarRegistro(id);
+    if (esDocente(usuarioActual)) cargarRegistro(id);
   } catch (err) {
     /* si falla, simplemente no se actualiza la lista de archivos */
   }
@@ -812,7 +899,7 @@ function renderComentarios(comentarios) {
     <div class="comentario-item">
       <div class="comentario-item-cabecera">
         <strong>${escapeHtml(c.autor_nombre)}</strong>
-        <span class="comentario-item-rol">${c.autor_rol === 'admin' ? 'Profesor' : 'Estudiante'}</span>
+        <span class="comentario-item-rol">${c.autor_rol === 'estudiante' ? 'Estudiante' : 'Profesor'}</span>
         <button class="icon-btn" data-action="eliminar-comentario" data-id="${c.id}" title="Eliminar comentario">${ICONO_X}</button>
       </div>
       <div class="comentario-item-texto">${escapeHtml(c.contenido)}</div>
@@ -1190,14 +1277,17 @@ function renderMaterias() {
     const card = document.createElement('div');
     card.className = 'materia-card';
     card.dataset.id = m.id;
-    const esAdmin = usuarioActual && usuarioActual.rol === 'admin';
-    if (sinFiltro && esAdmin) card.draggable = true;
+    const esAdmin = esDocente(usuarioActual);
+    // El reordenar por arrastre solo tiene sentido dentro de las materias de un mismo dueño;
+    // se desactiva para el admin cuando esta viendo materias de varios profesores a la vez.
+    const puedeReordenar = usuarioActual && usuarioActual.rol === 'profesor';
+    if (sinFiltro && puedeReordenar) card.draggable = true;
     const actividadNueva = esAdmin && m.actividad_reciente > 0;
     const tienePromedio = !esAdmin && m.promedio_notas !== null && m.promedio_notas !== undefined;
 
     card.innerHTML = `
       <div class="materia-card-banner" style="background:${colorMateria(m.id)}">
-        ${sinFiltro && esAdmin ? `<span class="materia-card-arrastre" title="Arrastra para reordenar">${ICONO_ARRASTRE}</span>` : ''}
+        ${sinFiltro && puedeReordenar ? `<span class="materia-card-arrastre" title="Arrastra para reordenar">${ICONO_ARRASTRE}</span>` : ''}
         ${actividadNueva ? `<span class="materia-card-actividad" title="Comentarios o entregas nuevas en los últimos 3 días">${m.actividad_reciente} nuevo${m.actividad_reciente > 1 ? 's' : ''}</span>` : ''}
         ${esAdmin ? `
         <div class="materia-card-acciones">
@@ -1207,7 +1297,7 @@ function renderMaterias() {
       </div>
       <div class="materia-card-body">
         <div class="materia-card-nombre">${escapeHtml(m.nombre)}</div>
-        ${m.profesor ? `<div class="materia-card-profesor">${ICONO_USUARIO} ${escapeHtml(m.profesor)}</div>` : ''}
+        ${m.dueno_nombre && usuarioActual && usuarioActual.rol === 'admin' ? `<div class="materia-card-profesor">${ICONO_USUARIO} ${escapeHtml(m.dueno_nombre)}</div>` : m.profesor ? `<div class="materia-card-profesor">${ICONO_USUARIO} ${escapeHtml(m.profesor)}</div>` : ''}
         <div class="materia-card-stats">
           <div class="materia-card-stat"><strong>${m.total}</strong><span>Total</span></div>
           <div class="materia-card-stat"><strong>${m.pendientes}</strong><span>Pendientes</span></div>
@@ -1303,7 +1393,7 @@ async function abrirMateria(id) {
   document.getElementById('materia-subtitulo').textContent = m.profesor
     ? `${m.profesor} · Organiza y da seguimiento a tus deberes`
     : 'Organiza, prioriza y da seguimiento a tus deberes de esta materia';
-  const esAdmin = usuarioActual && usuarioActual.rol === 'admin';
+  const esAdmin = esDocente(usuarioActual);
   document.getElementById('btn-estudiantes-materia').style.display = esAdmin ? '' : 'none';
   document.getElementById('panel-form').style.display = esAdmin ? '' : 'none';
   document.getElementById('btn-vaciar-completadas').style.display = esAdmin ? '' : 'none';
@@ -1331,7 +1421,7 @@ function renderAnuncios(anuncios) {
     cont.innerHTML = '<div class="anuncio-vacio">Todavía no hay anuncios en esta materia.</div>';
     return;
   }
-  const esAdmin = usuarioActual && usuarioActual.rol === 'admin';
+  const esAdmin = esDocente(usuarioActual);
   const hace24h = Date.now() - 24 * 60 * 60 * 1000;
   cont.innerHTML = anuncios.map(a => {
     const esNuevo = !esAdmin && new Date(a.fecha_creacion).getTime() > hace24h;
