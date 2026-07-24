@@ -63,6 +63,7 @@ function iniciarApp(usuario) {
   document.getElementById('sesion-avatar').textContent = usuario.nombre.trim().slice(0, 2).toUpperCase();
   document.getElementById('btn-gestionar-estudiantes').style.display = usuario.rol === 'admin' ? '' : 'none';
   document.getElementById('form-anuncio').style.display = usuario.rol === 'admin' ? '' : 'none';
+  document.getElementById('btn-nueva-materia').style.display = usuario.rol === 'admin' ? '' : 'none';
   mostrarVista('materias');
   cargarMaterias();
   cargarResumenGlobal();
@@ -291,11 +292,11 @@ function render(tareas) {
         ` : ''}
       </div>
       <div class="tarea-acciones">
-        ${bloqueada ? '' : `
-          <button class="icon-btn" data-action="adjuntar" data-id="${t.id}" title="Adjuntar archivo">${ICONO_CLIP}</button>
+        ${bloqueada ? '' : `<button class="icon-btn" data-action="adjuntar" data-id="${t.id}" title="Adjuntar archivo">${ICONO_CLIP}</button>`}
+        ${esAdmin ? `
           <button class="icon-btn icon-editar" data-action="editar" data-id="${t.id}" title="Editar">${ICONO_LAPIZ}</button>
           <button class="icon-btn icon-eliminar" data-action="eliminar" data-id="${t.id}" title="Eliminar">${ICONO_BASURA}</button>
-        `}
+        ` : ''}
       </div>
     `;
     lista.appendChild(div);
@@ -782,9 +783,9 @@ function renderDetalleArchivo(t) {
   }
   cont.innerHTML = archivos.map(a => `
     <div class="adjunto adjunto-grande">
-      <a href="/api/archivos/${a.ruta}" target="_blank" rel="noopener" download="${escapeHtml(a.nombre_original)}">
+      <button type="button" class="adjunto-descarga" data-action="descargar-archivo" data-ruta="${a.ruta}" data-nombre="${escapeHtml(a.nombre_original)}">
         ${ICONO_ARCHIVO} <span>${escapeHtml(a.nombre_original)}</span>
-      </a>
+      </button>
       ${a.usuario_nombre ? `<span class="adjunto-autor">${escapeHtml(a.usuario_nombre)}</span>` : ''}
       ${entregaBloqueadaActual ? '' : `<button class="adjunto-quitar" data-action="quitar-archivo" data-tarea-id="${t.id}" data-archivo-id="${a.id}" title="Quitar archivo">${ICONO_X}</button>`}
     </div>
@@ -921,6 +922,26 @@ document.getElementById('detalle-overlay').addEventListener('click', (e) => {
 });
 
 document.getElementById('detalle-panel').addEventListener('click', async (e) => {
+  const btnDescarga = e.target.closest('button[data-action="descargar-archivo"]');
+  if (btnDescarga) {
+    try {
+      const res = await fetch(`/api/archivos/${btnDescarga.dataset.ruta}`);
+      if (!res.ok) throw new Error();
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const enlace = document.createElement('a');
+      enlace.href = url;
+      enlace.download = btnDescarga.dataset.nombre;
+      document.body.appendChild(enlace);
+      enlace.click();
+      enlace.remove();
+      URL.revokeObjectURL(url);
+    } catch (err) {
+      mostrarToast('No se pudo descargar el archivo', 'error');
+    }
+    return;
+  }
+
   const btn = e.target.closest('button[data-action="quitar-archivo"]');
   if (!btn) return;
   try {
@@ -1169,14 +1190,20 @@ function renderMaterias() {
     const card = document.createElement('div');
     card.className = 'materia-card';
     card.dataset.id = m.id;
-    if (sinFiltro) card.draggable = true;
+    const esAdmin = usuarioActual && usuarioActual.rol === 'admin';
+    if (sinFiltro && esAdmin) card.draggable = true;
+    const actividadNueva = esAdmin && m.actividad_reciente > 0;
+    const tienePromedio = !esAdmin && m.promedio_notas !== null && m.promedio_notas !== undefined;
+
     card.innerHTML = `
       <div class="materia-card-banner" style="background:${colorMateria(m.id)}">
-        ${sinFiltro ? `<span class="materia-card-arrastre" title="Arrastra para reordenar">${ICONO_ARRASTRE}</span>` : ''}
+        ${sinFiltro && esAdmin ? `<span class="materia-card-arrastre" title="Arrastra para reordenar">${ICONO_ARRASTRE}</span>` : ''}
+        ${actividadNueva ? `<span class="materia-card-actividad" title="Comentarios o entregas nuevas en los últimos 3 días">${m.actividad_reciente} nuevo${m.actividad_reciente > 1 ? 's' : ''}</span>` : ''}
+        ${esAdmin ? `
         <div class="materia-card-acciones">
           <button class="materia-card-icon-btn" data-action="editar-materia" data-id="${m.id}" title="Editar materia">${ICONO_LAPIZ}</button>
           <button class="materia-card-icon-btn" data-action="eliminar-materia" data-id="${m.id}" title="Eliminar materia">${ICONO_X}</button>
-        </div>
+        </div>` : ''}
       </div>
       <div class="materia-card-body">
         <div class="materia-card-nombre">${escapeHtml(m.nombre)}</div>
@@ -1185,9 +1212,11 @@ function renderMaterias() {
           <div class="materia-card-stat"><strong>${m.total}</strong><span>Total</span></div>
           <div class="materia-card-stat"><strong>${m.pendientes}</strong><span>Pendientes</span></div>
           <div class="materia-card-stat"><strong>${m.completadas}</strong><span>Listas</span></div>
+          ${tienePromedio ? `<div class="materia-card-stat materia-card-stat-promedio"><strong>${m.promedio_notas}</strong><span>Promedio</span></div>` : ''}
         </div>
         <div class="materia-card-footer">
           <button type="button" class="btn-ver-materia" data-action="ver-materia" data-id="${m.id}">Ver Materia</button>
+          ${esAdmin ? `<button type="button" class="btn-texto" data-action="ver-calificaciones" data-id="${m.id}">Calificaciones</button>` : ''}
         </div>
       </div>
     `;
@@ -1202,6 +1231,7 @@ document.getElementById('materias-grid').addEventListener('click', (e) => {
     if (action === 'editar-materia') abrirModalEditarMateria(id);
     if (action === 'eliminar-materia') pedirConfirmacionEliminarMateria(id);
     if (action === 'ver-materia') abrirMateria(id);
+    if (action === 'ver-calificaciones') abrirModalCalificaciones(id);
     return;
   }
   const card = e.target.closest('.materia-card');
@@ -1273,8 +1303,11 @@ async function abrirMateria(id) {
   document.getElementById('materia-subtitulo').textContent = m.profesor
     ? `${m.profesor} · Organiza y da seguimiento a tus deberes`
     : 'Organiza, prioriza y da seguimiento a tus deberes de esta materia';
-  document.getElementById('btn-estudiantes-materia').style.display =
-    (usuarioActual && usuarioActual.rol === 'admin') ? '' : 'none';
+  const esAdmin = usuarioActual && usuarioActual.rol === 'admin';
+  document.getElementById('btn-estudiantes-materia').style.display = esAdmin ? '' : 'none';
+  document.getElementById('panel-form').style.display = esAdmin ? '' : 'none';
+  document.getElementById('btn-vaciar-completadas').style.display = esAdmin ? '' : 'none';
+  document.getElementById('btn-imprimir').style.display = esAdmin ? '' : 'none';
   resetForm();
   mostrarVista('tareas');
   await cargarTareas();
@@ -1299,16 +1332,20 @@ function renderAnuncios(anuncios) {
     return;
   }
   const esAdmin = usuarioActual && usuarioActual.rol === 'admin';
-  cont.innerHTML = anuncios.map(a => `
+  const hace24h = Date.now() - 24 * 60 * 60 * 1000;
+  cont.innerHTML = anuncios.map(a => {
+    const esNuevo = !esAdmin && new Date(a.fecha_creacion).getTime() > hace24h;
+    return `
     <div class="anuncio-item" data-id="${a.id}">
       <span class="anuncio-item-icono">${ICONO_MEGAFONO}</span>
       <div class="anuncio-item-cuerpo">
-        <div class="anuncio-item-texto">${escapeHtml(a.contenido)}</div>
+        <div class="anuncio-item-texto">${escapeHtml(a.contenido)} ${esNuevo ? '<span class="anuncio-item-nuevo">Nuevo</span>' : ''}</div>
         <div class="anuncio-item-fecha">${formatearFechaHora(a.fecha_creacion)}</div>
       </div>
       ${esAdmin ? `<button class="icon-btn" data-action="eliminar-anuncio" data-id="${a.id}" title="Eliminar anuncio">${ICONO_BASURA}</button>` : ''}
     </div>
-  `).join('');
+  `;
+  }).join('');
 }
 
 function formatearFechaHora(iso) {
@@ -1437,6 +1474,123 @@ document.getElementById('lista-inscritos').addEventListener('click', async (e) =
   } catch (err) {
     mostrarToast('No se pudo quitar al estudiante', 'error');
   }
+});
+
+document.getElementById('btn-toggle-lote').addEventListener('click', () => {
+  const form = document.getElementById('form-inscripcion-lote');
+  form.style.display = form.style.display === 'none' ? '' : 'none';
+});
+
+document.getElementById('form-inscripcion-lote').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  if (!materiaActual) return;
+  const texto = document.getElementById('lote-estudiantes').value;
+  const password = document.getElementById('lote-password').value;
+
+  const estudiantes = texto.split('\n')
+    .map(linea => linea.trim())
+    .filter(Boolean)
+    .map(linea => {
+      const [nombre, correo] = linea.split(',').map(s => s.trim());
+      return { nombre, correo };
+    })
+    .filter(e => e.nombre && e.correo);
+
+  if (!estudiantes.length) {
+    mostrarToast('Pega al menos una línea con formato "Nombre, correo"', 'error');
+    return;
+  }
+  if (!password) {
+    mostrarToast('Indica una contraseña temporal para las cuentas nuevas', 'error');
+    return;
+  }
+
+  try {
+    const res = await fetch(`${API_URL_MATERIAS}/${materiaActual}/estudiantes/lote`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ estudiantes, password })
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      mostrarToast(data.error || 'No se pudo agregar la lista', 'error');
+      return;
+    }
+    mostrarToast(`${data.creados} cuenta(s) nueva(s), ${data.inscritos} inscrito(s) en la materia`);
+    document.getElementById('form-inscripcion-lote').reset();
+    document.getElementById('form-inscripcion-lote').style.display = 'none';
+    await cargarInscritos();
+  } catch (err) {
+    mostrarToast('Ocurrió un error, intenta de nuevo', 'error');
+  }
+});
+
+/* ---------- Libro de calificaciones de una materia ---------- */
+
+async function abrirModalCalificaciones(materiaId) {
+  const m = todasLasMaterias.find(x => String(x.id) === String(materiaId));
+  document.getElementById('calificaciones-materia-nombre').textContent = m ? m.nombre : '';
+  document.getElementById('calificaciones-tabla-cont').innerHTML =
+    '<div class="cargando"><span class="spinner"></span> Cargando...</div>';
+  document.getElementById('calificaciones-modal-overlay').classList.add('visible');
+  try {
+    const res = await fetch(`${API_URL_MATERIAS}/${materiaId}/libro-notas`);
+    if (!res.ok) throw new Error();
+    const data = await res.json();
+    renderLibroCalificaciones(data);
+  } catch (err) {
+    document.getElementById('calificaciones-tabla-cont').innerHTML =
+      '<div class="usuarios-vacio">No se pudo cargar el libro de calificaciones.</div>';
+  }
+}
+
+function cerrarModalCalificaciones() {
+  document.getElementById('calificaciones-modal-overlay').classList.remove('visible');
+}
+
+function renderLibroCalificaciones(data) {
+  const cont = document.getElementById('calificaciones-tabla-cont');
+  const { tareas, estudiantes } = data;
+
+  if (!estudiantes.length) {
+    cont.innerHTML = '<div class="usuarios-vacio">Todavía no hay estudiantes inscritos en esta materia.</div>';
+    return;
+  }
+  if (!tareas.length) {
+    cont.innerHTML = '<div class="usuarios-vacio">Todavía no hay tareas creadas en esta materia.</div>';
+    return;
+  }
+
+  const encabezados = tareas.map(t => `<th title="${escapeHtml(t.titulo)}">${escapeHtml(t.titulo.slice(0, 14))}${t.titulo.length > 14 ? '…' : ''}</th>`).join('');
+  const filas = estudiantes.map(e => {
+    const celdas = tareas.map(t => {
+      const nota = e.notas[t.id];
+      return `<td>${nota !== undefined && nota !== null ? nota : '—'}</td>`;
+    }).join('');
+    return `
+      <tr>
+        <td class="calificaciones-nombre">${escapeHtml(e.nombre)}</td>
+        ${celdas}
+        <td class="calificaciones-promedio">${e.promedio !== null ? e.promedio : '—'}</td>
+      </tr>
+    `;
+  }).join('');
+
+  cont.innerHTML = `
+    <div class="calificaciones-tabla-scroll">
+      <table class="calificaciones-tabla">
+        <thead>
+          <tr><th>Estudiante</th>${encabezados}<th>Promedio</th></tr>
+        </thead>
+        <tbody>${filas}</tbody>
+      </table>
+    </div>
+  `;
+}
+
+document.getElementById('calificaciones-modal-cerrar').addEventListener('click', cerrarModalCalificaciones);
+document.getElementById('calificaciones-modal-overlay').addEventListener('click', (e) => {
+  if (e.target.id === 'calificaciones-modal-overlay') cerrarModalCalificaciones();
 });
 
 async function irATarea(materiaId, tareaId) {

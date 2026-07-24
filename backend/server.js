@@ -1,5 +1,7 @@
 const express = require('express');
 const cors = require('cors');
+const helmet = require('helmet');
+const rateLimit = require('express-rate-limit');
 const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
@@ -8,15 +10,42 @@ const jwt = require('jsonwebtoken');
 const pool = require('./db');
 
 const app = express();
-app.use(cors());
+app.use(helmet());
+
+const ALLOWED_ORIGINS = (process.env.ALLOWED_ORIGINS || 'http://localhost:8081')
+  .split(',')
+  .map((origen) => origen.trim())
+  .filter(Boolean);
+app.use(cors({ origin: ALLOWED_ORIGINS }));
+
 app.use(express.json());
 
 const PORT = process.env.PORT || 3000;
 const PRIORIDADES_VALIDAS = ['alta', 'media', 'baja'];
-const JWT_SECRET = process.env.JWT_SECRET || 'gestortareas_dev_secret_2026';
+const JWT_SECRET = process.env.JWT_SECRET;
+if (!JWT_SECRET) {
+  throw new Error('JWT_SECRET no está definido. Configúralo como variable de entorno.');
+}
+
+const loginLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  limit: 10,
+  standardHeaders: true,
+  legacyHeaders: false,
+  skipSuccessfulRequests: true,
+  message: { error: 'Demasiados intentos de inicio de sesión. Intenta de nuevo en unos minutos.' },
+});
 
 const UPLOADS_DIR = path.join(__dirname, 'uploads');
 if (!fs.existsSync(UPLOADS_DIR)) fs.mkdirSync(UPLOADS_DIR, { recursive: true });
+
+const TIPOS_ARCHIVO_PERMITIDOS = [
+  'application/pdf',
+  'image/png',
+  'image/jpeg',
+  'application/msword',
+  'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+];
 
 const storage = multer.diskStorage({
   destination: (req, file, cb) => cb(null, UPLOADS_DIR),
@@ -28,10 +57,35 @@ const storage = multer.diskStorage({
 
 const upload = multer({
   storage,
-  limits: { fileSize: 5 * 1024 * 1024 }
+  limits: { fileSize: 5 * 1024 * 1024 },
+  fileFilter: (req, file, cb) => {
+    if (!TIPOS_ARCHIVO_PERMITIDOS.includes(file.mimetype)) {
+      return cb(new Error('TIPO_ARCHIVO_NO_PERMITIDO'));
+    }
+    cb(null, true);
+  },
 });
 
-app.use('/api/archivos', express.static(UPLOADS_DIR));
+// Solo puede descargar el archivo quien pertenece a la materia de esa tarea
+// (el profesor dueño o un estudiante inscrito). Antes esta ruta era estática
+// y pública: cualquiera con el link directo podía descargar sin iniciar sesión.
+app.get('/api/archivos/:archivo', requireAuth, async (req, res) => {
+  try {
+    const usuarioId = await usuarioEfectivo(req);
+    const archivo = await pool.query(
+      `SELECT a.ruta, a.nombre_original FROM archivos_tarea a
+       JOIN tareas t ON t.id = a.tarea_id
+       JOIN materias m ON m.id = t.materia_id
+       WHERE a.ruta = $1 AND (m.usuario_id = $2 OR EXISTS (SELECT 1 FROM inscripciones i WHERE i.materia_id = m.id AND i.usuario_id = $2))`,
+      [req.params.archivo, usuarioId]
+    );
+    if (archivo.rows.length === 0) return res.status(404).json({ error: 'Archivo no encontrado' });
+    res.sendFile(path.join(UPLOADS_DIR, archivo.rows[0].ruta));
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Error al obtener el archivo' });
+  }
+});
 
 function generarToken(usuario) {
   return jwt.sign(
@@ -97,7 +151,7 @@ async function entregaBloqueada(req, tareaId) {
 
 app.get('/api/health', (req, res) => res.json({ status: 'ok' }));
 
-app.post('/api/auth/login', async (req, res) => {
+app.post('/api/auth/login', loginLimiter, async (req, res) => {
   const { correo, password } = req.body;
   if (!correo || !password) return res.status(400).json({ error: 'Correo y contraseña son obligatorios' });
   try {
@@ -174,7 +228,23 @@ app.get('/api/materias', async (req, res) => {
         (m.usuario_id = $1) AS es_dueno,
         COUNT(t.id)::int AS total,
         COUNT(t.id) FILTER (WHERE t.completada)::int AS completadas,
-        COUNT(t.id) FILTER (WHERE NOT t.completada)::int AS pendientes
+        COUNT(t.id) FILTER (WHERE NOT t.completada)::int AS pendientes,
+        (
+          SELECT COUNT(*)::int FROM (
+            SELECT c.fecha_creacion AS f FROM comentarios c
+              JOIN tareas tc ON tc.id = c.tarea_id
+              WHERE tc.materia_id = m.id AND c.autor_rol = 'estudiante' AND c.fecha_creacion > NOW() - INTERVAL '3 days'
+            UNION ALL
+            SELECT a.fecha_subida AS f FROM archivos_tarea a
+              JOIN tareas ta ON ta.id = a.tarea_id
+              WHERE ta.materia_id = m.id AND a.fecha_subida > NOW() - INTERVAL '3 days'
+          ) reciente
+        ) AS actividad_reciente,
+        (
+          SELECT ROUND(AVG(n.nota)::numeric, 2) FROM notas n
+          JOIN tareas tn ON tn.id = n.tarea_id
+          WHERE tn.materia_id = m.id AND n.usuario_id = $1 AND n.nota IS NOT NULL
+        ) AS promedio_notas
       FROM materias m
       LEFT JOIN tareas t ON t.materia_id = m.id
       WHERE ${VISIBLE_MATERIA.replace(/\$USR/g, '$1')}
@@ -188,7 +258,7 @@ app.get('/api/materias', async (req, res) => {
   }
 });
 
-app.post('/api/materias', async (req, res) => {
+app.post('/api/materias', requireAdmin, async (req, res) => {
   const { nombre, profesor } = req.body;
   if (!nombre) return res.status(400).json({ error: 'El nombre de la materia es obligatorio' });
   try {
@@ -205,7 +275,7 @@ app.post('/api/materias', async (req, res) => {
   }
 });
 
-app.put('/api/materias/reordenar', async (req, res) => {
+app.put('/api/materias/reordenar', requireAdmin, async (req, res) => {
   const { orden } = req.body;
   if (!Array.isArray(orden) || orden.length === 0) return res.status(400).json({ error: 'Se requiere un arreglo de ids' });
   try {
@@ -222,7 +292,7 @@ app.put('/api/materias/reordenar', async (req, res) => {
   }
 });
 
-app.put('/api/materias/:id', async (req, res) => {
+app.put('/api/materias/:id', requireAdmin, async (req, res) => {
   const { nombre, profesor } = req.body;
   if (!nombre) return res.status(400).json({ error: 'El nombre de la materia es obligatorio' });
   try {
@@ -238,7 +308,7 @@ app.put('/api/materias/:id', async (req, res) => {
   }
 });
 
-app.delete('/api/materias/:id', async (req, res) => {
+app.delete('/api/materias/:id', requireAdmin, async (req, res) => {
   try {
     const result = await pool.query(
       'DELETE FROM materias WHERE id = $1 AND usuario_id = $2 RETURNING *',
@@ -298,6 +368,107 @@ app.delete('/api/materias/:id/estudiantes/:usuarioId', requireAdmin, async (req,
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'Error al desinscribir al estudiante' });
+  }
+});
+
+// Agrega varios estudiantes de una vez a una materia: crea la cuenta si el correo
+// no existe todavía (con una contraseña temporal compartida) y los inscribe.
+app.post('/api/materias/:id/estudiantes/lote', requireAdmin, async (req, res) => {
+  const { estudiantes, password } = req.body;
+  if (!Array.isArray(estudiantes) || estudiantes.length === 0) {
+    return res.status(400).json({ error: 'Debes indicar al menos un estudiante' });
+  }
+  if (!password || password.length < 4) {
+    return res.status(400).json({ error: 'La contraseña temporal debe tener al menos 4 caracteres' });
+  }
+  try {
+    const materia = await pool.query('SELECT id FROM materias WHERE id = $1', [req.params.id]);
+    if (materia.rows.length === 0) return res.status(404).json({ error: 'Materia no encontrada' });
+
+    const hash = bcrypt.hashSync(password, 10);
+    let creados = 0;
+    let existentes = 0;
+    let inscritos = 0;
+
+    for (const est of estudiantes) {
+      const nombre = (est.nombre || '').trim();
+      const correo = (est.correo || '').trim().toLowerCase();
+      if (!nombre || !correo) continue;
+
+      let usuarioId;
+      const existe = await pool.query('SELECT id FROM usuarios WHERE correo = $1', [correo]);
+      if (existe.rows.length > 0) {
+        usuarioId = existe.rows[0].id;
+        existentes++;
+      } else {
+        const creado = await pool.query(
+          "INSERT INTO usuarios (nombre, correo, password_hash, rol) VALUES ($1, $2, $3, 'estudiante') RETURNING id",
+          [nombre, correo, hash]
+        );
+        usuarioId = creado.rows[0].id;
+        creados++;
+      }
+
+      const insc = await pool.query(
+        'INSERT INTO inscripciones (materia_id, usuario_id) VALUES ($1, $2) ON CONFLICT (materia_id, usuario_id) DO NOTHING RETURNING id',
+        [req.params.id, usuarioId]
+      );
+      if (insc.rows.length > 0) inscritos++;
+    }
+
+    res.status(201).json({ creados, existentes, inscritos });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Error al agregar estudiantes en lote' });
+  }
+});
+
+// Libro de calificaciones: matriz de estudiantes x tareas con la nota de cada uno,
+// mas el promedio individual, para toda la materia (no solo una tarea a la vez).
+app.get('/api/materias/:id/libro-notas', requireAdmin, async (req, res) => {
+  try {
+    const usuarioId = await usuarioEfectivo(req);
+    if (!(await materiaVisible(req.params.id, usuarioId))) return res.status(404).json({ error: 'Materia no encontrada' });
+
+    const tareasResult = await pool.query(
+      'SELECT id, titulo FROM tareas WHERE materia_id = $1 ORDER BY id',
+      [req.params.id]
+    );
+
+    const estudiantesResult = await pool.query(
+      `SELECT u.id, u.nombre, u.correo
+       FROM inscripciones i JOIN usuarios u ON u.id = i.usuario_id
+       WHERE i.materia_id = $1
+       ORDER BY u.nombre`,
+      [req.params.id]
+    );
+
+    const notasResult = await pool.query(
+      `SELECT n.usuario_id, n.tarea_id, n.nota
+       FROM notas n JOIN tareas t ON t.id = n.tarea_id
+       WHERE t.materia_id = $1`,
+      [req.params.id]
+    );
+
+    const notasPorEstudiante = {};
+    notasResult.rows.forEach((n) => {
+      if (!notasPorEstudiante[n.usuario_id]) notasPorEstudiante[n.usuario_id] = {};
+      notasPorEstudiante[n.usuario_id][n.tarea_id] = n.nota === null ? null : Number(n.nota);
+    });
+
+    const estudiantes = estudiantesResult.rows.map((e) => {
+      const notas = notasPorEstudiante[e.id] || {};
+      const valores = Object.values(notas).filter((v) => v !== null && v !== undefined);
+      const promedio = valores.length
+        ? Number((valores.reduce((a, b) => a + b, 0) / valores.length).toFixed(2))
+        : null;
+      return { ...e, notas, promedio };
+    });
+
+    res.json({ tareas: tareasResult.rows, estudiantes });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Error al obtener el libro de calificaciones' });
   }
 });
 
@@ -420,7 +591,7 @@ app.get('/api/tareas/:id', async (req, res) => {
   }
 });
 
-app.post('/api/tareas', async (req, res) => {
+app.post('/api/tareas', requireAdmin, async (req, res) => {
   const { titulo, descripcion, prioridad, fecha_limite, materia_id } = req.body;
   if (!titulo) return res.status(400).json({ error: 'El título es obligatorio' });
   const prioridadFinal = PRIORIDADES_VALIDAS.includes(prioridad) ? prioridad : 'media';
@@ -439,7 +610,7 @@ app.post('/api/tareas', async (req, res) => {
   }
 });
 
-app.put('/api/tareas/:id', async (req, res) => {
+app.put('/api/tareas/:id', requireAdmin, async (req, res) => {
   const { titulo, descripcion, completada, prioridad, fecha_limite, materia_id } = req.body;
   const prioridadFinal = PRIORIDADES_VALIDAS.includes(prioridad) ? prioridad : 'media';
   try {
@@ -465,7 +636,7 @@ app.put('/api/tareas/:id', async (req, res) => {
   }
 });
 
-app.delete('/api/tareas/completadas', async (req, res) => {
+app.delete('/api/tareas/completadas', requireAdmin, async (req, res) => {
   try {
     const { materia_id } = req.query;
     const params = [await usuarioEfectivo(req)];
@@ -482,7 +653,7 @@ app.delete('/api/tareas/completadas', async (req, res) => {
   }
 });
 
-app.delete('/api/tareas/:id', async (req, res) => {
+app.delete('/api/tareas/:id', requireAdmin, async (req, res) => {
   try {
     const usuarioId = await usuarioEfectivo(req);
     const motivoBloqueo = await entregaBloqueada(req, req.params.id);
@@ -713,6 +884,9 @@ app.put('/api/tareas/:id/notas', requireAdmin, async (req, res) => {
 app.use((err, req, res, next) => {
   if (err instanceof multer.MulterError) {
     return res.status(400).json({ error: 'El archivo supera el tamaño máximo permitido (5MB)' });
+  }
+  if (err.message === 'TIPO_ARCHIVO_NO_PERMITIDO') {
+    return res.status(400).json({ error: 'Tipo de archivo no permitido. Solo se aceptan PDF, Word e imágenes.' });
   }
   console.error(err);
   res.status(500).json({ error: 'Error interno del servidor' });

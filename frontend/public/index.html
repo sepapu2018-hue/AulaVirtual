@@ -265,7 +265,7 @@
         </div>
       </section>
 
-      <section class="panel-form">
+      <section class="panel-form" id="panel-form">
         <h2>
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
           Nueva Tarea
@@ -490,6 +490,22 @@
       </form>
 
       <div class="usuarios-lista-header">
+        <h4>Agregar en lote</h4>
+        <button type="button" class="btn-texto" id="btn-toggle-lote">Pegar una lista</button>
+      </div>
+      <form id="form-inscripcion-lote" class="form-usuario" style="display:none">
+        <p class="modal-usuarios-sub">
+          Una línea por estudiante, formato <code>Nombre, correo@ejemplo.com</code>. Si el correo ya existe, solo se inscribe; si no existe, se crea la cuenta con la contraseña temporal indicada.
+        </p>
+        <textarea id="lote-estudiantes" rows="5" placeholder="Ana Torres, ana@correo.com&#10;Luis Vera, luis@correo.com"></textarea>
+        <label for="lote-password">Contraseña temporal para las cuentas nuevas</label>
+        <input type="text" id="lote-password" placeholder="Contraseña temporal" autocomplete="off">
+        <div class="botones">
+          <button type="submit" class="btn-primary">Agregar lista</button>
+        </div>
+      </form>
+
+      <div class="usuarios-lista-header">
         <h4>Inscritos en esta materia</h4>
       </div>
       <div id="lista-inscritos">
@@ -498,6 +514,20 @@
 
       <div class="modal-botones">
         <button type="button" class="btn-secondary" id="inscripcion-modal-cerrar">Cerrar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: libro de calificaciones de una materia -->
+  <div class="modal-overlay" id="calificaciones-modal-overlay">
+    <div class="modal modal-calificaciones">
+      <h3>Calificaciones de <span id="calificaciones-materia-nombre"></span></h3>
+      <p class="modal-usuarios-sub">Nota de cada estudiante por tarea, y su promedio en la materia.</p>
+      <div id="calificaciones-tabla-cont">
+        <div class="cargando" id="calificaciones-cargando"><span class="spinner"></span> Cargando...</div>
+      </div>
+      <div class="modal-botones">
+        <button type="button" class="btn-secondary" id="calificaciones-modal-cerrar">Cerrar</button>
       </div>
     </div>
   </div>

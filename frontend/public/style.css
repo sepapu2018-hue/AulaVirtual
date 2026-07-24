@@ -1478,7 +1478,8 @@ button:active {
   padding: 4px 6px 4px 10px;
 }
 
-.adjunto a {
+.adjunto a,
+.adjunto-descarga {
   display: inline-flex;
   align-items: center;
   gap: 5px;
@@ -1487,21 +1488,29 @@ button:active {
   font-weight: 600;
   text-decoration: none;
   max-width: 220px;
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  font-family: inherit;
 }
 
-.adjunto a svg {
+.adjunto a svg,
+.adjunto-descarga svg {
   width: 13px;
   height: 13px;
   flex-shrink: 0;
 }
 
-.adjunto a span {
+.adjunto a span,
+.adjunto-descarga span {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
-.adjunto a:hover {
+.adjunto a:hover,
+.adjunto-descarga:hover {
   text-decoration: underline;
 }
 
@@ -2436,4 +2445,100 @@ footer {
     color: #8b95a3;
     text-align: center;
   }
+}
+
+/* ---------- Actividad reciente y promedio en tarjeta de materia ---------- */
+
+.materia-card-actividad {
+  background: white;
+  color: var(--prioridad-media);
+  font-size: 10px;
+  font-weight: 700;
+  padding: 3px 8px;
+  border-radius: 999px;
+  box-shadow: var(--shadow-sm);
+}
+
+.materia-card-stat-promedio {
+  background: var(--success-light);
+}
+
+.materia-card-stat-promedio strong {
+  color: var(--success);
+}
+
+.materia-card-footer {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+/* ---------- Libro de calificaciones ---------- */
+
+.modal-calificaciones {
+  max-width: 720px;
+  text-align: left;
+  max-height: 88vh;
+  overflow-y: auto;
+}
+
+.modal-calificaciones h3 {
+  text-align: left;
+}
+
+.calificaciones-tabla-scroll {
+  overflow-x: auto;
+  margin-top: 12px;
+  border: 1px solid var(--gray-200);
+  border-radius: 8px;
+}
+
+.calificaciones-tabla {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12.5px;
+  white-space: nowrap;
+}
+
+.calificaciones-tabla th,
+.calificaciones-tabla td {
+  padding: 8px 10px;
+  border-bottom: 1px solid var(--gray-100);
+  text-align: center;
+}
+
+.calificaciones-tabla thead th {
+  background: var(--gray-50);
+  color: var(--gray-700);
+  font-weight: 700;
+  position: sticky;
+  top: 0;
+}
+
+.calificaciones-nombre {
+  text-align: left !important;
+  font-weight: 600;
+  color: var(--gray-900);
+}
+
+.calificaciones-promedio {
+  font-weight: 700;
+  color: var(--success);
+  background: var(--success-light);
+}
+
+/* ---------- Etiqueta "Nuevo" en anuncios ---------- */
+
+.anuncio-item-nuevo {
+  display: inline-block;
+  background: var(--danger-light);
+  color: var(--danger);
+  font-size: 9.5px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  padding: 2px 6px;
+  border-radius: 999px;
+  vertical-align: middle;
+  margin-left: 4px;
 }
