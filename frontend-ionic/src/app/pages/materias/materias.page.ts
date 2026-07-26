@@ -184,6 +184,14 @@ export class MateriasPage implements OnInit {
     );
   }
 
+  abrirMateria(materia: Materia): void {
+    this.router.navigate([
+      '/materias',
+      materia.id,
+      'tareas'
+    ]);
+  }
+
   cerrarSesion(): void {
     this.apiService.cerrarSesion();
 

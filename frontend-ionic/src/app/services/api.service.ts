@@ -38,6 +38,29 @@ export interface EstadisticasTareas {
   };
 }
 
+export interface Tarea {
+  id: number;
+  materia_id: number;
+  titulo: string;
+  descripcion: string | null;
+  prioridad: 'alta' | 'media' | 'baja';
+  fecha_limite: string | null;
+  completada: boolean;
+  archivo_nombre: string | null;
+  archivo_ruta: string | null;
+  fecha_creacion: string;
+  materia_nombre: string;
+  num_archivos: number;
+  mi_nota: number | string | null;
+}
+
+export interface Anuncio {
+  id: number;
+  materia_id: number;
+  contenido: string;
+  fecha_creacion: string;
+}
+
 @Injectable({
   providedIn: 'root'
 })
@@ -79,15 +102,51 @@ export class ApiService {
     );
   }
 
-  obtenerEstadisticasTareas(): Observable<EstadisticasTareas> {
+  obtenerTareasPorMateria(
+    materiaId: number
+  ): Observable<Tarea[]> {
     const token = this.obtenerToken();
 
     const headers = new HttpHeaders({
       Authorization: `Bearer ${token}`
     });
 
+    return this.http.get<Tarea[]>(
+      `${this.apiUrl}/tareas?materia_id=${materiaId}`,
+      { headers }
+    );
+  }
+
+  obtenerEstadisticasTareas(
+    materiaId?: number
+  ): Observable<EstadisticasTareas> {
+    const token = this.obtenerToken();
+
+    const headers = new HttpHeaders({
+      Authorization: `Bearer ${token}`
+    });
+
+    const url = materiaId
+      ? `${this.apiUrl}/tareas/estadisticas?materia_id=${materiaId}`
+      : `${this.apiUrl}/tareas/estadisticas`;
+
     return this.http.get<EstadisticasTareas>(
-      `${this.apiUrl}/tareas/estadisticas`,
+      url,
+      { headers }
+    );
+  }
+
+  obtenerAnuncios(
+    materiaId: number
+  ): Observable<Anuncio[]> {
+    const token = this.obtenerToken();
+
+    const headers = new HttpHeaders({
+      Authorization: `Bearer ${token}`
+    });
+
+    return this.http.get<Anuncio[]>(
+      `${this.apiUrl}/materias/${materiaId}/anuncios`,
       { headers }
     );
   }

@@ -1,0 +1,424 @@
+<ion-header>
+  <ion-toolbar class="barra-superior">
+    <div class="barra-contenido">
+
+      <div class="marca">
+        <span class="marca-icono">✓</span>
+        <span>GestorTareas</span>
+      </div>
+
+      <div class="sesion">
+        <span class="avatar">
+          {{ obtenerIniciales() }}
+        </span>
+
+        <div class="datos-usuario">
+          <strong>
+            {{ usuario?.nombre || 'Usuario' }}
+          </strong>
+
+          <span>
+            {{ esAdministrador
+              ? 'Administrador'
+              : 'Estudiante'
+            }}
+          </span>
+        </div>
+
+        <ion-button
+          fill="clear"
+          size="small"
+          class="boton-salir"
+          (click)="cerrarSesion()">
+          Salir
+        </ion-button>
+      </div>
+
+    </div>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content>
+
+  <section class="hero">
+
+    <div class="hero-decoracion"></div>
+
+    <div class="hero-contenido">
+
+      <ion-button
+        fill="clear"
+        size="small"
+        class="boton-volver"
+        (click)="volverMaterias()">
+        ← Mis Materias
+      </ion-button>
+
+      <div class="hero-texto">
+        <h1>
+          {{ materia?.nombre || 'Materia' }}
+        </h1>
+
+        <p>
+          @if (materia?.profesor) {
+            {{ materia?.profesor }} · Organiza y da
+            seguimiento a tus deberes
+          } @else {
+            Organiza, prioriza y da seguimiento
+            a tus deberes de esta materia
+          }
+        </p>
+      </div>
+
+    </div>
+
+  </section>
+
+  @if (cargando) {
+    <div class="estado">
+      <ion-spinner name="crescent"></ion-spinner>
+      <p>Cargando materia...</p>
+    </div>
+  }
+
+  @if (!cargando && mensajeError) {
+    <div class="estado">
+      <ion-text color="danger">
+        <p>{{ mensajeError }}</p>
+      </ion-text>
+
+      <ion-button
+        fill="outline"
+        (click)="cargarDatos()">
+        Reintentar
+      </ion-button>
+    </div>
+  }
+
+  @if (!cargando && !mensajeError) {
+
+    <section class="estadisticas">
+
+      <div class="estadistica-card">
+        <span
+          class="estadistica-icono icono-azul">
+          ☷
+        </span>
+
+        <div>
+          <strong>
+            {{ estadisticas.total }}
+          </strong>
+
+          <span>Total tareas</span>
+        </div>
+      </div>
+
+      <div class="estadistica-card">
+        <span
+          class="estadistica-icono icono-amarillo">
+          ◷
+        </span>
+
+        <div>
+          <strong>
+            {{ estadisticas.pendientes }}
+          </strong>
+
+          <span>Pendientes</span>
+        </div>
+      </div>
+
+      <div class="estadistica-card">
+        <span
+          class="estadistica-icono icono-verde">
+          ✓
+        </span>
+
+        <div>
+          <strong>
+            {{ estadisticas.completadas }}
+          </strong>
+
+          <span>Completadas</span>
+        </div>
+      </div>
+
+      <div class="estadistica-card">
+        <span
+          class="estadistica-icono icono-rojo">
+          !
+        </span>
+
+        <div>
+          <strong>
+            {{ estadisticas.vencidas }}
+          </strong>
+
+          <span>Vencidas</span>
+        </div>
+      </div>
+
+    </section>
+
+    <main class="contenido-principal">
+
+      <section class="panel panel-anuncios">
+
+        <div class="panel-titulo">
+          <span class="panel-icono">📣</span>
+          <h2>Tablón de Anuncios</h2>
+        </div>
+
+        @if (anuncios.length === 0) {
+          <div class="estado-vacio">
+            Todavía no hay anuncios en esta materia.
+          </div>
+        }
+
+        @if (anuncios.length > 0) {
+          <div class="lista-anuncios">
+
+            @for (
+              anuncio of anuncios;
+              track anuncio.id
+            ) {
+              <article class="anuncio">
+
+                <span class="anuncio-icono">
+                  📣
+                </span>
+
+                <div class="anuncio-cuerpo">
+                  <p>{{ anuncio.contenido }}</p>
+
+                  <small>
+                    {{
+                      formatearFechaHora(
+                        anuncio.fecha_creacion
+                      )
+                    }}
+                  </small>
+                </div>
+
+              </article>
+            }
+
+          </div>
+        }
+
+      </section>
+
+      <section class="panel panel-tareas">
+
+        <div class="panel-titulo">
+          <span class="panel-icono">☷</span>
+          <h2>Lista de Tareas</h2>
+        </div>
+
+        <ion-searchbar
+          [(ngModel)]="textoBusqueda"
+          placeholder="Buscar por título..."
+          animated="true"
+          showClearButton="focus"
+          class="buscador">
+        </ion-searchbar>
+
+        <div class="filtros">
+
+          <button
+            type="button"
+            class="filtro"
+            [class.activo]="
+              filtroActual === 'todas'
+            "
+            (click)="establecerFiltro('todas')">
+            Todas
+          </button>
+
+          <button
+            type="button"
+            class="filtro"
+            [class.activo]="
+              filtroActual === 'pendientes'
+            "
+            (click)="
+              establecerFiltro('pendientes')
+            ">
+            Pendientes
+          </button>
+
+          <button
+            type="button"
+            class="filtro"
+            [class.activo]="
+              filtroActual === 'completadas'
+            "
+            (click)="
+              establecerFiltro('completadas')
+            ">
+            Completadas
+          </button>
+
+        </div>
+
+        @if (tareasFiltradas.length === 0) {
+          <div class="estado-vacio tareas-vacio">
+
+            @if (tareas.length === 0) {
+              Todavía no existen tareas
+              en esta materia.
+            } @else {
+              No hay tareas que coincidan
+              con la búsqueda o el filtro.
+            }
+
+          </div>
+        }
+
+        @if (tareasFiltradas.length > 0) {
+          <div class="lista-tareas">
+
+            @for (
+              tarea of tareasFiltradas;
+              track tarea.id
+            ) {
+              <ion-card
+                class="tarea"
+                [class.prioridad-alta]="
+                  tarea.prioridad === 'alta'
+                "
+                [class.prioridad-media]="
+                  tarea.prioridad === 'media'
+                "
+                [class.prioridad-baja]="
+                  tarea.prioridad === 'baja'
+                "
+                [class.completada]="
+                  tarea.completada
+                ">
+
+                <ion-card-content>
+
+                  <div class="tarea-contenido">
+
+                    <span class="tarea-check">
+                      @if (tarea.completada) {
+                        ✓
+                      }
+                    </span>
+
+                    <div class="tarea-informacion">
+
+                      <div class="tarea-cabecera">
+                        <h3>{{ tarea.titulo }}</h3>
+
+                        <span
+                          class="prioridad"
+                          [class.prioridad-alta-badge]="
+                            tarea.prioridad === 'alta'
+                          "
+                          [class.prioridad-media-badge]="
+                            tarea.prioridad === 'media'
+                          "
+                          [class.prioridad-baja-badge]="
+                            tarea.prioridad === 'baja'
+                          ">
+                          {{
+                            obtenerTextoPrioridad(
+                              tarea.prioridad
+                            )
+                          }}
+                        </span>
+
+                        @if (
+                          tarea.mi_nota !== null &&
+                          tarea.mi_nota !== undefined
+                        ) {
+                          <span class="nota-badge">
+                            Nota: {{ tarea.mi_nota }}
+                          </span>
+                        }
+
+                      </div>
+
+                      @if (tarea.descripcion) {
+                        <p class="descripcion">
+                          {{ tarea.descripcion }}
+                        </p>
+                      }
+
+                      <div class="tarea-detalles">
+
+                        <span
+                          class="fecha"
+                          [class.fecha-vencida]="
+                            estaVencida(tarea)
+                          ">
+                          📅
+                          {{
+                            formatearFecha(
+                              tarea.fecha_limite
+                            )
+                          }}
+                        </span>
+
+                        @if (tarea.num_archivos > 0) {
+                          <span class="archivo">
+                            📎
+                            {{ tarea.num_archivos }}
+                            archivo{{
+                              tarea.num_archivos === 1
+                                ? ''
+                                : 's'
+                            }}
+                          </span>
+                        }
+
+                      </div>
+
+                    </div>
+
+                  </div>
+
+                </ion-card-content>
+
+              </ion-card>
+            }
+
+          </div>
+        }
+
+      </section>
+
+    </main>
+
+  }
+  <ion-fab
+    slot="fixed"
+    vertical="bottom"
+    horizontal="end">
+
+    <ion-fab-button
+      color="primary"
+      (click)="abrirFormularioNuevaTarea()">
+
+      <ion-icon name="add"></ion-icon>
+
+    </ion-fab-button>
+
+  </ion-fab>
+
+  <ion-modal
+    [isOpen]="mostrarFormulario"
+    (didDismiss)="mostrarFormulario = false">
+
+    <ng-template>
+
+      <app-tarea-form></app-tarea-form>
+
+    </ng-template>
+
+  </ion-modal>
+
+</ion-content>
