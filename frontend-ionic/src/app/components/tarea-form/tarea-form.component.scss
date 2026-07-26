@@ -1,0 +1,31 @@
+.formulario {
+
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+
+}
+
+h2{
+
+  margin:0;
+
+  color:#1e3a5f;
+
+  font-size:22px;
+
+  font-weight:700;
+
+}
+
+ion-item{
+
+  --padding-start:0;
+
+}
+
+ion-button{
+
+  margin-top:10px;
+
+}

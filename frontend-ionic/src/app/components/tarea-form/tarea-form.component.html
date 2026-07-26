@@ -1,0 +1,76 @@
+<div class="formulario">
+
+  <h2>Nueva tarea</h2>
+
+  <ion-item>
+
+    <ion-label position="stacked">
+      Título
+    </ion-label>
+
+    <ion-input
+      [(ngModel)]="titulo">
+    </ion-input>
+
+  </ion-item>
+
+  <ion-item>
+
+    <ion-label position="stacked">
+      Descripción
+    </ion-label>
+
+    <ion-textarea
+      rows="4"
+      [(ngModel)]="descripcion">
+    </ion-textarea>
+
+  </ion-item>
+
+  <ion-item>
+
+    <ion-label position="stacked">
+      Prioridad
+    </ion-label>
+
+    <ion-select
+      [(ngModel)]="prioridad">
+
+      <ion-select-option value="alta">
+        Alta
+      </ion-select-option>
+
+      <ion-select-option value="media">
+        Media
+      </ion-select-option>
+
+      <ion-select-option value="baja">
+        Baja
+      </ion-select-option>
+
+    </ion-select>
+
+  </ion-item>
+
+  <ion-item>
+
+    <ion-label position="stacked">
+      Fecha límite
+    </ion-label>
+
+    <ion-input
+      type="date"
+      [(ngModel)]="fechaLimite">
+    </ion-input>
+
+  </ion-item>
+
+  <ion-button
+    expand="block"
+    (click)="guardar()">
+
+    Guardar tarea
+
+  </ion-button>
+
+</div>

@@ -307,3 +307,14 @@ ion-progress-bar {
     padding: 36px 24px;
   }
 }
+
+.boton-ver-materia {
+  margin-top: 16px;
+  --border-color: var(--primary);
+  --color: var(--primary);
+  --border-radius: 7px;
+  --box-shadow: none;
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: none;
+}
