@@ -1,16 +1,28 @@
-import { Component } from '@angular/core';
+import { Component, EventEmitter, Input, Output } from '@angular/core';
+
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 
 import {
-  IonItem,
-  IonLabel,
+  IonHeader,
+  IonToolbar,
+  IonTitle,
+  IonButtons,
+  IonButton,
+  IonContent,
   IonInput,
   IonTextarea,
   IonSelect,
   IonSelectOption,
-  IonButton
+  IonSpinner
 } from '@ionic/angular/standalone';
+
+export interface TareaFormularioDatos {
+  titulo: string;
+  descripcion: string;
+  prioridad: 'alta' | 'media' | 'baja';
+  fecha_limite: string | null;
+}
 
 @Component({
   selector: 'app-tarea-form',
@@ -20,32 +32,65 @@ import {
   imports: [
     CommonModule,
     FormsModule,
-    IonItem,
-    IonLabel,
+    IonHeader,
+    IonToolbar,
+    IonTitle,
+    IonButtons,
+    IonButton,
+    IonContent,
     IonInput,
     IonTextarea,
     IonSelect,
     IonSelectOption,
-    IonButton
+    IonSpinner
   ]
 })
 export class TareaFormComponent {
 
-  titulo = '';
+  @Input()
+  guardando = false;
 
+  @Output()
+  cancelarFormulario = new EventEmitter<void>();
+
+  @Output()
+  enviarFormulario =
+    new EventEmitter<TareaFormularioDatos>();
+
+  titulo = '';
   descripcion = '';
 
-  prioridad = 'media';
+  prioridad: 'alta' | 'media' | 'baja' =
+    'media';
 
   fechaLimite = '';
+  mensajeError = '';
 
-  guardar() {
-    console.log({
-      titulo: this.titulo,
-      descripcion: this.descripcion,
-      prioridad: this.prioridad,
-      fechaLimite: this.fechaLimite
-    });
+  cancelar(): void {
+    this.cancelarFormulario.emit();
   }
 
+  guardar(): void {
+    if (this.guardando) {
+      return;
+    }
+    
+    const tituloLimpio = this.titulo.trim();
+
+    if (!tituloLimpio) {
+      this.mensajeError =
+        'El título de la tarea es obligatorio.';
+
+      return;
+    }
+
+    this.mensajeError = '';
+
+    this.enviarFormulario.emit({
+      titulo: tituloLimpio,
+      descripcion: this.descripcion.trim(),
+      prioridad: this.prioridad,
+      fecha_limite: this.fechaLimite || null
+    });
+  }
 }

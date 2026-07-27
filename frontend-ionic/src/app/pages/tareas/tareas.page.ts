@@ -20,18 +20,12 @@ import {
   IonFab,
   IonFabButton,
   IonIcon, 
-  IonModal
+  IonModal,
+  IonToast
 } from '@ionic/angular/standalone';
 
-import {
-  ApiService,
-  Materia,
-  Tarea,
-  Anuncio,
-  EstadisticasTareas
-} from '../../services/api.service';
-
-import { TareaFormComponent } from '../../components/tarea-form/tarea-form.component';
+import { ApiService, Materia, Tarea, Anuncio, EstadisticasTareas } from '../../services/api.service';
+import { TareaFormComponent, TareaFormularioDatos } from '../../components/tarea-form/tarea-form.component';
 
 type FiltroTareas =
   | 'todas'
@@ -59,7 +53,8 @@ type FiltroTareas =
     IonFabButton,
     IonIcon,
     IonModal,
-    TareaFormComponent
+    TareaFormComponent,
+    IonToast
   ]
 })
 
@@ -78,6 +73,12 @@ export class TareasPage implements OnInit {
 
   cargando = true;
   mensajeError = '';
+
+  guardandoTarea = false;
+
+  toastAbierto = false;
+  toastMensaje = '';
+  toastColor: 'success' | 'danger' = 'success';
 
   usuario = this.apiService.obtenerUsuario();
 
@@ -314,6 +315,55 @@ export class TareasPage implements OnInit {
 
   abrirFormularioNuevaTarea(): void {
     this.mostrarFormulario = true;
+  }
+
+  crearTarea(
+    datos: TareaFormularioDatos
+  ): void {
+    if (this.guardandoTarea) {
+      return;
+    }
+
+    this.guardandoTarea = true;
+
+    this.apiService
+      .crearTarea(this.materiaId, datos)
+      .subscribe({
+        next: () => {
+          this.guardandoTarea = false;
+          this.mostrarFormulario = false;
+
+          this.mostrarToast(
+            'Tarea creada correctamente',
+            'success'
+          );
+
+          this.cargarDatos();
+        },
+        error: (error: HttpErrorResponse) => {
+          console.error(
+            'Error al crear la tarea:',
+            error
+          );
+
+          this.guardandoTarea = false;
+
+          this.mostrarToast(
+            error.error?.error ??
+              'No se pudo crear la tarea.',
+            'danger'
+          );
+        }
+      });
+  }
+
+  mostrarToast(
+    mensaje: string,
+    color: 'success' | 'danger'
+  ): void {
+    this.toastMensaje = mensaje;
+    this.toastColor = color;
+    this.toastAbierto = true;
   }
 }
 
