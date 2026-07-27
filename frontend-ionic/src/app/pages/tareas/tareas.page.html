@@ -410,15 +410,34 @@
   </ion-fab>
 
   <ion-modal
+    class="tarea-form-modal"
     [isOpen]="mostrarFormulario"
+    [backdropDismiss]="true"
     (didDismiss)="mostrarFormulario = false">
 
     <ng-template>
 
-      <app-tarea-form></app-tarea-form>
+      <app-tarea-form
+        [guardando]="guardandoTarea"
+        (cancelarFormulario)="
+          mostrarFormulario = false
+        "
+        (enviarFormulario)="
+          crearTarea($event)
+        ">
+      </app-tarea-form>
 
     </ng-template>
 
   </ion-modal>
+
+  <ion-toast
+    [isOpen]="toastAbierto"
+    [message]="toastMensaje"
+    [color]="toastColor"
+    [duration]="2500"
+    position="bottom"
+    (didDismiss)="toastAbierto = false">
+  </ion-toast>
 
 </ion-content>

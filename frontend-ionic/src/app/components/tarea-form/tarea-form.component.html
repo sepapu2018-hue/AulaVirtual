@@ -1,76 +1,184 @@
-<div class="formulario">
+<ion-header class="modal-header">
+  <ion-toolbar class="modal-toolbar">
 
-  <h2>Nueva tarea</h2>
+    <ion-buttons slot="start">
+      <ion-button
+        class="boton-cerrar"
+        (click)="cancelar()">
+        Cancelar
+      </ion-button>
+    </ion-buttons>
 
-  <ion-item>
+    <ion-title>Nueva tarea</ion-title>
 
-    <ion-label position="stacked">
-      Título
-    </ion-label>
+  </ion-toolbar>
+</ion-header>
 
-    <ion-input
-      [(ngModel)]="titulo">
-    </ion-input>
+<ion-content>
 
-  </ion-item>
+  <div class="formulario-contenedor">
 
-  <ion-item>
+    <div class="formulario-encabezado">
 
-    <ion-label position="stacked">
-      Descripción
-    </ion-label>
+      <span class="formulario-icono">
+        +
+      </span>
 
-    <ion-textarea
-      rows="4"
-      [(ngModel)]="descripcion">
-    </ion-textarea>
+      <div>
+        <h2>Agregar una tarea</h2>
 
-  </ion-item>
+        <p>
+          Registra un nuevo deber para esta materia.
+        </p>
+      </div>
 
-  <ion-item>
+    </div>
 
-    <ion-label position="stacked">
-      Prioridad
-    </ion-label>
+    <form
+      class="tarea-formulario"
+      (ngSubmit)="guardar()">
 
-    <ion-select
-      [(ngModel)]="prioridad">
+      <div class="campo-grupo">
 
-      <ion-select-option value="alta">
-        Alta
-      </ion-select-option>
+        <ion-input
+          label="Título"
+          labelPlacement="stacked"
+          fill="outline"
+          type="text"
+          name="titulo"
+          [(ngModel)]="titulo"
+          placeholder="Ej: Terminar el informe"
+          autocomplete="off"
+          maxlength="120"
+          [counter]="true">
+        </ion-input>
 
-      <ion-select-option value="media">
-        Media
-      </ion-select-option>
+      </div>
 
-      <ion-select-option value="baja">
-        Baja
-      </ion-select-option>
+      <div class="campo-grupo">
 
-    </ion-select>
+        <ion-textarea
+          label="Descripción"
+          labelPlacement="stacked"
+          fill="outline"
+          name="descripcion"
+          [(ngModel)]="descripcion"
+          placeholder="Detalles de la tarea (opcional)"
+          rows="4"
+          maxlength="500"
+          [counter]="true"
+          [autoGrow]="true">
+        </ion-textarea>
 
-  </ion-item>
+      </div>
 
-  <ion-item>
+      <div class="fila-doble">
 
-    <ion-label position="stacked">
-      Fecha límite
-    </ion-label>
+        <div class="campo-grupo">
 
-    <ion-input
-      type="date"
-      [(ngModel)]="fechaLimite">
-    </ion-input>
+          <ion-select
+            label="Prioridad"
+            labelPlacement="stacked"
+            fill="outline"
+            name="prioridad"
+            [(ngModel)]="prioridad"
+            interface="action-sheet">
 
-  </ion-item>
+            <ion-select-option value="alta">
+              Alta
+            </ion-select-option>
 
-  <ion-button
-    expand="block"
-    (click)="guardar()">
+            <ion-select-option value="media">
+              Media
+            </ion-select-option>
 
-    Guardar tarea
+            <ion-select-option value="baja">
+              Baja
+            </ion-select-option>
 
-  </ion-button>
+          </ion-select>
 
-</div>
+        </div>
+
+        <div class="campo-grupo">
+
+          <ion-input
+            label="Fecha límite"
+            labelPlacement="stacked"
+            fill="outline"
+            type="date"
+            name="fechaLimite"
+            [(ngModel)]="fechaLimite">
+          </ion-input>
+
+        </div>
+
+      </div>
+
+      <div class="prioridad-preview">
+
+        <span>Prioridad seleccionada:</span>
+
+        <strong
+          [class.prioridad-alta]="
+            prioridad === 'alta'
+          "
+          [class.prioridad-media]="
+            prioridad === 'media'
+          "
+          [class.prioridad-baja]="
+            prioridad === 'baja'
+          ">
+
+          {{
+            prioridad === 'alta'
+              ? 'Alta'
+              : prioridad === 'media'
+                ? 'Media'
+                : 'Baja'
+          }}
+
+        </strong>
+
+      </div>
+
+      @if (mensajeError) {
+        <p class="mensaje-error">
+          {{ mensajeError }}
+        </p>
+      }
+
+      <div class="botones">
+
+        <ion-button
+          type="button"
+          expand="block"
+          fill="solid"
+          class="boton-cancelar"
+          [disabled]="guardando"
+          (click)="cancelar()">
+          Cancelar
+        </ion-button>
+
+        <ion-button
+          type="submit"
+          expand="block"
+          class="boton-guardar"
+          [disabled]="guardando">
+
+          @if (guardando) {
+            <ion-spinner name="crescent"></ion-spinner>
+            <span>Guardando...</span>
+          } @else {
+          Agregar tarea
+          }
+
+        </ion-button>
+
+      </div>
+
+    </form>
+
+  </div>
+
+</ion-content>

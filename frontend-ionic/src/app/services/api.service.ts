@@ -117,6 +117,31 @@ export class ApiService {
     );
   }
 
+  crearTarea(
+    materiaId: number,
+    datos: {
+      titulo: string;
+      descripcion: string;
+      prioridad: 'alta' | 'media' | 'baja';
+      fecha_limite: string | null;
+    }
+  ): Observable<Tarea> {
+    const token = this.obtenerToken();
+
+    const headers = new HttpHeaders({
+      Authorization: `Bearer ${token}`
+    });
+
+    return this.http.post<Tarea>(
+      `${this.apiUrl}/tareas`,
+      {
+        ...datos,
+        materia_id: materiaId
+      },
+      { headers }
+    );
+  }
+
   obtenerEstadisticasTareas(
     materiaId?: number
   ): Observable<EstadisticasTareas> {
