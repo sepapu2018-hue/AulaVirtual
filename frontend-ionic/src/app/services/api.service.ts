@@ -142,6 +142,49 @@ export class ApiService {
     );
   }
 
+  actualizarTarea(
+    tareaId: number,
+    materiaId: number,
+    datos: {
+      titulo: string;
+      descripcion: string;
+      prioridad: 'alta' | 'media' | 'baja';
+      fecha_limite: string | null;
+    },
+    completada: boolean
+  ): Observable<Tarea> {
+    const token = this.obtenerToken();
+
+    const headers = new HttpHeaders({
+      Authorization: `Bearer ${token}`
+    });
+
+    return this.http.put<Tarea>(
+      `${this.apiUrl}/tareas/${tareaId}`,
+      {
+        ...datos,
+        completada,
+        materia_id: materiaId
+      },
+      { headers }
+    );
+  }
+
+  eliminarTarea(
+    tareaId: number
+  ): Observable<{ mensaje?: string }> {
+    const token = this.obtenerToken();
+
+    const headers = new HttpHeaders({
+      Authorization: `Bearer ${token}`
+    });
+
+    return this.http.delete<{ mensaje?: string }>(
+      `${this.apiUrl}/tareas/${tareaId}`,
+      { headers }
+    );
+  }
+
   obtenerEstadisticasTareas(
     materiaId?: number
   ): Observable<EstadisticasTareas> {
