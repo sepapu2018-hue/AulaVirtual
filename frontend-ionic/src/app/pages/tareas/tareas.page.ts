@@ -26,6 +26,8 @@ import {
 
 import { ApiService, Materia, Tarea, Anuncio, EstadisticasTareas } from '../../services/api.service';
 import { TareaFormComponent, TareaFormularioDatos } from '../../components/tarea-form/tarea-form.component';
+import { TareaDetalleComponent } from '../../components/tarea-detalle/tarea-detalle.component';
+import { AlertController } from '@ionic/angular';
 
 type FiltroTareas =
   | 'todas'
@@ -54,7 +56,8 @@ type FiltroTareas =
     IonIcon,
     IonModal,
     TareaFormComponent,
-    IonToast
+    IonToast,
+    TareaDetalleComponent
   ]
 })
 
@@ -67,6 +70,10 @@ export class TareasPage implements OnInit {
   anuncios: Anuncio[] = [];
 
   mostrarFormulario = false;
+  tareaEnEdicion: Tarea | null = null;
+
+  mostrarDetalle = false;
+  tareaSeleccionada: Tarea | null = null;
 
   textoBusqueda = '';
   filtroActual: FiltroTareas = 'todas';
@@ -75,6 +82,7 @@ export class TareasPage implements OnInit {
   mensajeError = '';
 
   guardandoTarea = false;
+  eliminandoTareaId: number | null = null;
 
   toastAbierto = false;
   toastMensaje = '';
@@ -97,7 +105,8 @@ export class TareasPage implements OnInit {
   constructor(
     private apiService: ApiService,
     private route: ActivatedRoute,
-    private router: Router
+    private router: Router,
+    private alertController:AlertController
   ) {
     addIcons({
       add
@@ -314,10 +323,37 @@ export class TareasPage implements OnInit {
   }
 
   abrirFormularioNuevaTarea(): void {
+    this.tareaEnEdicion = null;
     this.mostrarFormulario = true;
   }
 
-  crearTarea(
+  abrirFormularioEditar(
+    tarea: Tarea,
+    evento: Event
+  ): void {
+    evento.stopPropagation();
+
+    this.tareaEnEdicion = tarea;
+    this.mostrarFormulario = true;
+  }
+
+  cerrarFormularioTarea(): void {
+    this.mostrarFormulario = false;
+    this.tareaEnEdicion = null;
+    this.guardandoTarea = false;
+  }
+
+  abrirDetalleTarea(tarea: Tarea): void {
+    this.tareaSeleccionada = tarea;
+    this.mostrarDetalle = true;
+  }
+
+  cerrarDetalleTarea(): void {
+    this.mostrarDetalle = false;
+    this.tareaSeleccionada = null;
+  }
+
+  guardarTarea(
     datos: TareaFormularioDatos
   ): void {
     if (this.guardandoTarea) {
@@ -326,15 +362,94 @@ export class TareasPage implements OnInit {
 
     this.guardandoTarea = true;
 
+    const editando = this.tareaEnEdicion !== null;
+
+    const peticion = this.tareaEnEdicion
+      ? this.apiService.actualizarTarea(
+          this.tareaEnEdicion.id,
+          this.materiaId,
+          datos,
+          this.tareaEnEdicion.completada
+        )
+      : this.apiService.crearTarea(
+          this.materiaId,
+          datos
+        );
+
+    peticion.subscribe({
+      next: () => {
+        this.cerrarFormularioTarea();
+
+        this.mostrarToast(
+          editando
+            ? 'Tarea actualizada correctamente'
+            : 'Tarea creada correctamente',
+          'success'
+        );
+
+        this.cargarDatos();
+      },
+      error: (error: HttpErrorResponse) => {
+        console.error(
+          'Error al guardar la tarea:',
+          error
+        );
+
+        this.guardandoTarea = false;
+
+        this.mostrarToast(
+          error.error?.error ??
+            'No se pudo guardar la tarea.',
+          'danger'
+        );
+      }
+    });
+  }
+
+  async solicitarEliminarTarea(
+    tarea: Tarea,
+    evento: Event
+  ): Promise<void> {
+    evento.stopPropagation();
+
+    const alerta =
+      await this.alertController.create({
+        header: '¿Eliminar esta tarea?',
+        message:
+          'Esta acción no se puede deshacer.',
+        buttons: [
+          {
+            text: 'Cancelar',
+            role: 'cancel'
+          },
+          {
+            text: 'Eliminar',
+            role: 'destructive',
+            handler: () => {
+              this.eliminarTarea(tarea);
+            }
+          }
+        ]
+      });
+
+    await alerta.present();
+  }
+
+  eliminarTarea(tarea: Tarea): void {
+    if (this.eliminandoTareaId !== null) {
+      return;
+    }
+
+    this.eliminandoTareaId = tarea.id;
+
     this.apiService
-      .crearTarea(this.materiaId, datos)
+      .eliminarTarea(tarea.id)
       .subscribe({
         next: () => {
-          this.guardandoTarea = false;
-          this.mostrarFormulario = false;
+          this.eliminandoTareaId = null;
 
           this.mostrarToast(
-            'Tarea creada correctamente',
+            'Tarea eliminada correctamente',
             'success'
           );
 
@@ -342,15 +457,15 @@ export class TareasPage implements OnInit {
         },
         error: (error: HttpErrorResponse) => {
           console.error(
-            'Error al crear la tarea:',
+            'Error al eliminar la tarea:',
             error
           );
 
-          this.guardandoTarea = false;
+          this.eliminandoTareaId = null;
 
           this.mostrarToast(
             error.error?.error ??
-              'No se pudo crear la tarea.',
+              'No se pudo eliminar la tarea.',
             'danger'
           );
         }

@@ -9,7 +9,9 @@
       </ion-button>
     </ion-buttons>
 
-    <ion-title>Nueva tarea</ion-title>
+    <ion-title>
+      {{ editando ? 'Editar tarea' : 'Nueva tarea' }}
+    </ion-title>
 
   </ion-toolbar>
 </ion-header>
@@ -25,10 +27,16 @@
       </span>
 
       <div>
-        <h2>Agregar una tarea</h2>
+        <h2>
+          {{ editando ? 'Modificar la tarea' : 'Agregar una tarea' }}
+        </h2>
 
         <p>
-          Registra un nuevo deber para esta materia.
+          @if (editando) {
+            Actualiza la información de este deber.
+          } @else {
+            Registra un nuevo deber para esta materia.
+          }
         </p>
       </div>
 
@@ -168,9 +176,12 @@
 
           @if (guardando) {
             <ion-spinner name="crescent"></ion-spinner>
-            <span>Guardando...</span>
+
+            <span>
+              {{ editando ? 'Actualizando...' : 'Guardando...' }}
+            </span>
           } @else {
-          Agregar tarea
+            {{ editando ? 'Actualizar tarea' : 'Agregar tarea' }}
           }
 
         </ion-button>

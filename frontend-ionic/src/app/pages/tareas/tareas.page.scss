@@ -619,6 +619,76 @@ ion-modal.tarea-form-modal::part(content) {
   color-scheme: light;
 }
 
+.tarea-acciones {
+  display: flex;
+  justify-content: flex-end;
+  gap: 6px;
+  margin-top: 10px;
+}
+
+.boton-editar-tarea {
+  min-height: 32px;
+  margin: 0;
+
+
+
+  --background: var(--primary-light);
+  --background-activated: #dde6f0;
+  --color: var(--primary);
+  --border-radius: 6px;
+  --box-shadow: none;
+
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: none;
+}
+
+.boton-eliminar-tarea {
+  min-height: 32px;
+  margin: 0;
+
+  --background: var(--danger-light);
+  --background-activated: #f3dcdc;
+  --color: var(--danger);
+  --border-radius: 6px;
+  --box-shadow: none;
+
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: none;
+}
+
+.boton-eliminar-tarea ion-spinner {
+  width: 16px;
+  height: 16px;
+}
+
+.tarea {
+  cursor: pointer;
+}
+
+ion-modal.tarea-detalle-modal {
+  --width: 100%;
+  --height: 94%;
+  --border-radius: 20px 20px 0 0;
+  --box-shadow:
+    0 -8px 30px
+    rgba(16, 24, 32, 0.2);
+}
+
+ion-modal.tarea-detalle-modal::part(content) {
+  background: #f7f8fa;
+  color-scheme: light;
+}
+
+@media (min-width: 700px) {
+  ion-modal.tarea-detalle-modal {
+    --width: 600px;
+    --height: 760px;
+    --border-radius: 18px;
+  }
+}
+
 @media (min-width: 700px) {
   ion-modal.tarea-form-modal {
     --width: 540px;

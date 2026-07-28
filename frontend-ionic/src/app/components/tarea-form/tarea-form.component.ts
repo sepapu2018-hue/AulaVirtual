@@ -17,6 +17,8 @@ import {
   IonSpinner
 } from '@ionic/angular/standalone';
 
+import { Tarea } from '../../services/api.service';
+
 export interface TareaFormularioDatos {
   titulo: string;
   descripcion: string;
@@ -49,6 +51,34 @@ export class TareaFormComponent {
 
   @Input()
   guardando = false;
+
+  private tareaActual: Tarea | null = null;
+
+  @Input()
+  set tarea(valor: Tarea | null) {
+    this.tareaActual = valor;
+
+    if (valor) {
+      this.titulo = valor.titulo;
+      this.descripcion = valor.descripcion ?? '';
+      this.prioridad = valor.prioridad ?? 'media';
+
+      this.fechaLimite = valor.fecha_limite
+        ? valor.fecha_limite.split('T')[0]
+        : '';
+    } else {
+      this.titulo = '';
+      this.descripcion = '';
+      this.prioridad = 'media';
+      this.fechaLimite = '';
+    }
+
+    this.mensajeError = '';
+  }
+
+  get editando(): boolean {
+    return this.tareaActual !== null;
+  }
 
   @Output()
   cancelarFormulario = new EventEmitter<void>();

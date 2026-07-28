@@ -1,0 +1,138 @@
+<ion-header class="detalle-header">
+  <ion-toolbar class="detalle-toolbar">
+
+    <ion-title>Detalle de la tarea</ion-title>
+
+    <ion-buttons slot="end">
+      <ion-button
+        class="boton-cerrar"
+        (click)="cerrar()">
+        Cerrar
+      </ion-button>
+    </ion-buttons>
+
+  </ion-toolbar>
+</ion-header>
+
+<ion-content>
+
+  <div class="detalle-contenedor">
+
+    <section class="detalle-principal">
+
+      <span
+        class="prioridad-badge"
+        [class.prioridad-alta]="
+          tarea.prioridad === 'alta'
+        "
+        [class.prioridad-media]="
+          tarea.prioridad === 'media'
+        "
+        [class.prioridad-baja]="
+          tarea.prioridad === 'baja'
+        ">
+        {{ obtenerTextoPrioridad() }}
+      </span>
+
+      <h1>{{ tarea.titulo }}</h1>
+
+      <div class="detalle-meta">
+
+        <span
+          class="estado"
+          [class.estado-completada]="
+            tarea.completada
+          ">
+          {{
+            tarea.completada
+              ? '✓ Completada'
+              : 'Pendiente'
+          }}
+        </span>
+
+        <span
+          class="fecha"
+          [class.fecha-vencida]="estaVencida()">
+          📅 {{ formatearFecha(tarea.fecha_limite) }}
+        </span>
+
+      </div>
+
+      <div class="descripcion">
+        <h2>Descripción</h2>
+
+        <p>
+          {{
+            tarea.descripcion ||
+            'Esta tarea no tiene descripción.'
+          }}
+        </p>
+      </div>
+
+      <div class="creacion">
+        Creada el
+        {{ formatearFechaHora(tarea.fecha_creacion) }}
+      </div>
+
+    </section>
+
+    <section class="detalle-seccion">
+
+      <div class="seccion-titulo">
+        <span class="seccion-icono">📎</span>
+
+        <div>
+          <h2>Archivo adjunto</h2>
+          <p>Entrega asociada a esta tarea</p>
+        </div>
+      </div>
+
+      @if (tarea.num_archivos > 0) {
+        <div class="archivo-resumen">
+          <span>📄</span>
+
+          <div>
+            <strong>
+              {{ tarea.num_archivos }}
+              archivo{{
+                tarea.num_archivos === 1
+                  ? ''
+                  : 's'
+              }}
+            </strong>
+
+            <p>
+              Abre esta sección para consultar
+              la entrega.
+            </p>
+          </div>
+        </div>
+      } @else {
+        <div class="seccion-vacia">
+          No hay archivos adjuntos.
+        </div>
+      }
+
+    </section>
+
+    <section class="detalle-seccion">
+
+      <div class="seccion-titulo">
+        <span class="seccion-icono">💬</span>
+
+        <div>
+          <h2>Comentarios</h2>
+          <p>Conversación sobre la tarea</p>
+        </div>
+      </div>
+
+      <div class="seccion-vacia">
+        Los comentarios se conectarán
+        en el siguiente bloque.
+      </div>
+
+    </section>
+
+  </div>
+
+</ion-content>
