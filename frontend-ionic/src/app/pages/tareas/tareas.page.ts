@@ -14,6 +14,7 @@ import {
   IonButton,
   IonSpinner,
   IonText,
+  IonTextarea,
   IonSearchbar,
   IonCard,
   IonCardContent,
@@ -24,9 +25,10 @@ import {
   IonToast
 } from '@ionic/angular/standalone';
 
-import { ApiService, Materia, Tarea, Anuncio, EstadisticasTareas } from '../../services/api.service';
+import { ApiService, Materia, Tarea, TareaDetalle, Anuncio, EstadisticasTareas, ModoAulaEstudiante } from '../../services/api.service';
 import { TareaFormComponent, TareaFormularioDatos } from '../../components/tarea-form/tarea-form.component';
 import { TareaDetalleComponent } from '../../components/tarea-detalle/tarea-detalle.component';
+import { MateriaEstudiantesComponent } from '../../components/materia-estudiantes/materia-estudiantes.component';
 import { AlertController } from '@ionic/angular';
 
 type FiltroTareas =
@@ -48,6 +50,7 @@ type FiltroTareas =
     IonButton,
     IonSpinner,
     IonText,
+    IonTextarea,
     IonSearchbar,
     IonCard,
     IonCardContent,
@@ -57,7 +60,8 @@ type FiltroTareas =
     IonModal,
     TareaFormComponent,
     IonToast,
-    TareaDetalleComponent
+    TareaDetalleComponent,
+    MateriaEstudiantesComponent
   ]
 })
 
@@ -69,11 +73,21 @@ export class TareasPage implements OnInit {
   tareas: Tarea[] = [];
   anuncios: Anuncio[] = [];
 
+  anuncioContenido = '';
+
+  publicandoAnuncio = false;
+  cargandoAnuncios = false;
+
+  eliminandoAnuncioId: number | null = null;
+
   mostrarFormulario = false;
   tareaEnEdicion: Tarea | null = null;
 
+  mostrarEstudiantesMateria = false;
+
   mostrarDetalle = false;
-  tareaSeleccionada: Tarea | null = null;
+  tareaSeleccionada: TareaDetalle | null = null;
+  cargandoDetalleId: number | null = null;
 
   textoBusqueda = '';
   filtroActual: FiltroTareas = 'todas';
@@ -133,7 +147,12 @@ export class TareasPage implements OnInit {
   }
 
   get esAdministrador(): boolean {
-    return this.usuario?.rol === 'admin';
+    return (this.apiService.obtenerUsuario()?.rol === 'admin');
+  }
+
+  get modoAula():
+    ModoAulaEstudiante | null {
+    return this.apiService.obtenerModoAula();
   }
 
   get tareasFiltradas(): Tarea[] {
@@ -221,6 +240,171 @@ export class TareasPage implements OnInit {
         this.cargando = false;
       }
     });
+  }
+
+  cargarAnuncios(): void {
+    this.cargandoAnuncios = true;
+
+    this.apiService
+      .obtenerAnuncios(this.materiaId)
+      .subscribe({
+        next: (anuncios) => {
+          this.anuncios = anuncios;
+          this.cargandoAnuncios = false;
+        },
+        error: (error: HttpErrorResponse) => {
+          console.error(
+            'Error al cargar anuncios:',
+            error
+          );
+
+          this.cargandoAnuncios = false;
+
+          this.mostrarToast(
+            error.error?.error ??
+              'No se pudieron cargar los anuncios.',
+            'danger'
+          );
+        }
+      });
+  }
+
+  publicarAnuncio(): void {
+    const contenido =
+      this.anuncioContenido.trim();
+
+    if (!contenido) {
+      this.mostrarToast(
+        'Escribe un anuncio antes de publicarlo.',
+        'danger'
+      );
+
+      return;
+    }
+
+    if (
+      !this.esAdministrador ||
+      this.publicandoAnuncio
+    ) {
+      return;
+    }
+
+    this.publicandoAnuncio = true;
+
+    this.apiService
+      .crearAnuncio(
+        this.materiaId,
+        contenido
+      )
+      .subscribe({
+        next: () => {
+          this.anuncioContenido = '';
+          this.publicandoAnuncio = false;
+
+          this.mostrarToast(
+            'Anuncio publicado correctamente',
+            'success'
+          );
+
+          this.cargarAnuncios();
+        },
+        error: (error: HttpErrorResponse) => {
+          console.error(
+            'Error al publicar anuncio:',
+            error
+          );
+
+          this.publicandoAnuncio = false;
+
+          this.mostrarToast(
+            error.error?.error ??
+              'No se pudo publicar el anuncio.',
+            'danger'
+          );
+        }
+      });
+  }
+
+  async solicitarEliminarAnuncio(
+    anuncio: Anuncio
+  ): Promise<void> {
+    const alerta =
+      await this.alertController.create({
+        header: '¿Eliminar este anuncio?',
+        message:
+          'Esta acción no se puede deshacer.',
+        buttons: [
+          {
+            text: 'Cancelar',
+            role: 'cancel'
+          },
+          {
+            text: 'Eliminar',
+            role: 'destructive',
+            handler: () => {
+              this.eliminarAnuncio(anuncio);
+            }
+          }
+        ]
+      });
+
+    await alerta.present();
+  }
+
+  eliminarAnuncio(
+    anuncio: Anuncio
+  ): void {
+    if (
+      !this.esAdministrador ||
+      this.eliminandoAnuncioId !== null
+    ) {
+      return;
+    }
+
+    this.eliminandoAnuncioId = anuncio.id;
+
+    this.apiService
+      .eliminarAnuncio(anuncio.id)
+      .subscribe({
+        next: () => {
+          this.eliminandoAnuncioId = null;
+
+          this.mostrarToast(
+            'Anuncio eliminado correctamente',
+            'success'
+          );
+
+          this.cargarAnuncios();
+        },
+        error: (error: HttpErrorResponse) => {
+          console.error(
+            'Error al eliminar anuncio:',
+            error
+          );
+
+          this.eliminandoAnuncioId = null;
+
+          this.mostrarToast(
+            error.error?.error ??
+              'No se pudo eliminar el anuncio.',
+            'danger'
+          );
+        }
+      });
+  }
+
+  formatearFechaHoraAnuncio(
+    fecha: string
+  ): string {
+    return new Intl.DateTimeFormat(
+      'es-EC',
+      {
+        day: 'numeric',
+        month: 'short',
+        hour: '2-digit',
+        minute: '2-digit'
+      }
+    ).format(new Date(fecha));
   }
 
   establecerFiltro(
@@ -314,6 +498,12 @@ export class TareasPage implements OnInit {
     this.router.navigateByUrl('/materias');
   }
 
+  salirModoAula(): void {
+    this.apiService.salirModoAula();
+
+    this.router.navigate(['/materias']);
+  }
+
   cerrarSesion(): void {
     this.apiService.cerrarSesion();
 
@@ -343,14 +533,57 @@ export class TareasPage implements OnInit {
     this.guardandoTarea = false;
   }
 
+  abrirEstudiantesMateria(): void {
+    if (!this.esAdministrador) {
+      return;
+    }
+
+    this.mostrarEstudiantesMateria = true;
+  }
+
+  cerrarEstudiantesMateria(): void {
+    this.mostrarEstudiantesMateria = false;
+  }
+
   abrirDetalleTarea(tarea: Tarea): void {
-    this.tareaSeleccionada = tarea;
-    this.mostrarDetalle = true;
+    if (this.cargandoDetalleId !== null) {
+      return;
+    }
+
+    this.cargandoDetalleId = tarea.id;
+
+    this.apiService
+      .obtenerDetalleTarea(tarea.id)
+      .subscribe({
+        next: (detalle) => {
+          this.cargandoDetalleId = null;
+          this.tareaSeleccionada = detalle;
+          this.mostrarDetalle = true;
+        },
+        error: (error: HttpErrorResponse) => {
+          console.error(
+            'Error al cargar el detalle:',
+            error
+          );
+
+          this.cargandoDetalleId = null;
+
+          this.mostrarToast(
+            error.error?.error ??
+              'No se pudo cargar el detalle.',
+            'danger'
+          );
+        }
+      });
   }
 
   cerrarDetalleTarea(): void {
     this.mostrarDetalle = false;
     this.tareaSeleccionada = null;
+  }
+
+  actualizarTrasCambioDetalle(): void {
+    this.cargarDatos();
   }
 
   guardarTarea(

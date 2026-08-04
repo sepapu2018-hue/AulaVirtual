@@ -54,6 +54,18 @@
         ← Mis Materias
       </ion-button>
 
+      @if (esAdministrador) {
+        <ion-button
+          type="button"
+          fill="outline"
+          class="boton-estudiantes-materia"
+          (click)="abrirEstudiantesMateria()">
+
+          Estudiantes
+
+        </ion-button>
+      }
+
       <div class="hero-texto">
         <h1>
           {{ materia?.nombre || 'Materia' }}
@@ -163,43 +175,138 @@
 
     <main class="contenido-principal">
 
-      <section class="panel panel-anuncios">
+      <section class="panel-anuncios">
 
-        <div class="panel-titulo">
-          <span class="panel-icono">📣</span>
-          <h2>Tablón de Anuncios</h2>
+        <div class="anuncios-cabecera">
+
+          <div class="anuncios-titulo-icono">
+            📣
+          </div>
+
+          <div>
+            <h2>Tablón de anuncios</h2>
+
+            <p>
+              Avisos importantes de esta materia
+            </p>
+          </div>
+
         </div>
 
-        @if (anuncios.length === 0) {
-          <div class="estado-vacio">
+        @if (esAdministrador) {
+          <form
+            class="form-anuncio"
+            (ngSubmit)="publicarAnuncio()">
+
+            <ion-textarea
+              name="anuncioContenido"
+              [(ngModel)]="anuncioContenido"
+              fill="outline"
+              placeholder="Escribe un aviso para tus estudiantes."
+              [autoGrow]="true"
+              rows="2"
+              maxlength="500"
+              [disabled]="publicandoAnuncio">
+            </ion-textarea>
+
+            <ion-button
+              type="submit"
+              class="boton-publicar-anuncio"
+              [disabled]="publicandoAnuncio">
+
+              @if (publicandoAnuncio) {
+                <ion-spinner name="crescent">
+                </ion-spinner>
+
+                <span>Publicando...</span>
+              } @else {
+                Publicar aviso
+              }
+
+            </ion-button>
+
+          </form>
+        }
+
+        @if (cargandoAnuncios) {
+          <div class="anuncios-cargando">
+
+            <ion-spinner name="crescent">
+            </ion-spinner>
+
+            <span>Cargando anuncios...</span>
+
+          </div>
+        }
+
+        @if (
+          !cargandoAnuncios &&
+          anuncios.length === 0
+        ) {
+          <div class="anuncios-vacio">
             Todavía no hay anuncios en esta materia.
           </div>
         }
 
-        @if (anuncios.length > 0) {
+        @if (
+          !cargandoAnuncios &&
+          anuncios.length > 0
+        ) {
           <div class="lista-anuncios">
 
             @for (
               anuncio of anuncios;
               track anuncio.id
             ) {
-              <article class="anuncio">
+              <article class="anuncio-item">
 
-                <span class="anuncio-icono">
-                  📣
-                </span>
+                <div class="anuncio-icono">
+                  📢
+                </div>
 
                 <div class="anuncio-cuerpo">
-                  <p>{{ anuncio.contenido }}</p>
 
-                  <small>
+                  <p class="anuncio-contenido">
+                    {{ anuncio.contenido }}
+                  </p>
+
+                  <span class="anuncio-fecha">
                     {{
-                      formatearFechaHora(
+                      formatearFechaHoraAnuncio(
                         anuncio.fecha_creacion
                       )
                     }}
-                  </small>
+                  </span>
+
                 </div>
+
+                @if (esAdministrador) {
+                  <button
+                    type="button"
+                    class="boton-eliminar-anuncio"
+                    title="Eliminar anuncio"
+                    [disabled]="
+                      eliminandoAnuncioId ===
+                      anuncio.id
+                    "
+                    (click)="
+                      solicitarEliminarAnuncio(
+                        anuncio
+                      )
+                    ">
+
+                    @if (
+                      eliminandoAnuncioId ===
+                      anuncio.id
+                    ) {
+                      <ion-spinner name="crescent">
+                      </ion-spinner>
+                    } @else {
+                      ×
+                    }
+
+                  </button>
+                }
 
               </article>
             }
@@ -489,10 +596,31 @@
       @if (tareaSeleccionada) {
         <app-tarea-detalle
           [tarea]="tareaSeleccionada"
-          (cerrarDetalle)="
-            cerrarDetalleTarea()
-          ">
+          (cerrarDetalle)="cerrarDetalleTarea()"
+          (tareaActualizada)="actualizarTrasCambioDetalle()"
+          >
         </app-tarea-detalle>
+      }
+
+    </ng-template>
+
+  </ion-modal>
+
+  <ion-modal
+    class="estudiantes-materia-modal"
+    [isOpen]="mostrarEstudiantesMateria"
+    (didDismiss)="cerrarEstudiantesMateria()">
+
+    <ng-template>
+
+      @if (materia) {
+        <app-materia-estudiantes
+          [materiaId]="materia.id"
+          [materiaNombre]="materia.nombre"
+          (cerrarModal)="
+            cerrarEstudiantesMateria()
+          ">
+        </app-materia-estudiantes>
       }
 
     </ng-template>
@@ -509,3 +637,21 @@
   </ion-toast>
 
 </ion-content>
+
+@if (modoAula) {
+  <section class="modo-aula-banner">
+
+    <span>
+      Viendo el aula de
+      <strong>{{ modoAula.nombre }}</strong>
+      · modo administrador
+    </span>
+
+    <button
+      type="button"
+      (click)="salirModoAula()">
+      Salir
+    </button>
+
+  </section>
+}

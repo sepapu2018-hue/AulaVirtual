@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HttpErrorResponse } from '@angular/common/http';
 import { Router } from '@angular/router';
+import { AlertController } from '@ionic/angular';
 
 import {
   IonHeader,
@@ -14,14 +15,27 @@ import {
   IonText,
   IonCard,
   IonCardContent,
-  IonProgressBar
+  IonProgressBar,
+  IonModal,
+  IonToast
 } from '@ionic/angular/standalone';
 
 import {
   ApiService,
   Materia,
-  EstadisticasTareas
+  EstadisticasTareas,
+  Estudiante,
+  ModoAulaEstudiante
 } from '../../services/api.service';
+
+import {
+  MateriaFormComponent,
+  MateriaFormularioDatos
+} from '../../components/materia-form/materia-form.component';
+
+import {
+  GestionEstudiantesComponent
+} from '../../components/gestion-estudiantes/gestion-estudiantes.component';
 
 @Component({
   selector: 'app-materias',
@@ -40,9 +54,14 @@ import {
     IonText,
     IonCard,
     IonCardContent,
-    IonProgressBar
+    IonProgressBar,
+    IonModal,
+    IonToast,
+    MateriaFormComponent,
+    GestionEstudiantesComponent
   ]
 })
+
 export class MateriasPage implements OnInit {
 
   materias: Materia[] = [];
@@ -52,6 +71,19 @@ export class MateriasPage implements OnInit {
   mensajeError = '';
 
   usuario = this.apiService.obtenerUsuario();
+
+  mostrarFormularioMateria = false;
+
+  mostrarGestionEstudiantes = false;
+
+  materiaEnEdicion: Materia | null = null;
+
+  guardandoMateria = false;
+  eliminandoMateriaId: number | null = null;
+
+  toastAbierto = false;
+  toastMensaje = '';
+  toastColor: 'success' | 'danger' = 'success';
 
   estadisticas: EstadisticasTareas = {
     total: 0,
@@ -80,9 +112,19 @@ export class MateriasPage implements OnInit {
     '#475569'
   ];
 
+  get esAdministrador(): boolean {
+    return this.usuario?.rol === 'admin';
+  }
+
+  get modoAula():
+    ModoAulaEstudiante | null {
+    return this.apiService.obtenerModoAula();
+  }
+
   constructor(
     private apiService: ApiService,
-    private router: Router
+    private router: Router,
+    private alertController: AlertController
   ) {}
 
   ngOnInit(): void {
@@ -147,6 +189,218 @@ export class MateriasPage implements OnInit {
         );
       }
     });
+  }
+
+  abrirNuevaMateria(): void {
+    this.materiaEnEdicion = null;
+    this.mostrarFormularioMateria = true;
+  }
+
+  abrirEditarMateria(
+    materia: Materia,
+    evento: Event
+  ): void {
+    evento.stopPropagation();
+
+    this.materiaEnEdicion = materia;
+    this.mostrarFormularioMateria = true;
+  }
+
+  cerrarFormularioMateria(): void {
+    if (this.guardandoMateria) {
+      return;
+    }
+
+    this.mostrarFormularioMateria = false;
+    this.materiaEnEdicion = null;
+  }
+
+  abrirGestionEstudiantes(): void {
+    if (!this.esAdministrador) {
+      return;
+    }
+
+    this.mostrarGestionEstudiantes = true;
+  }
+
+  cerrarGestionEstudiantes(): void {
+    this.mostrarGestionEstudiantes = false;
+  }
+
+  entrarModoAula(
+    estudiante: Estudiante
+  ): void {
+    if (!this.esAdministrador) {
+      return;
+    }
+
+    this.apiService
+      .entrarModoAula(estudiante);
+
+    this.mostrarGestionEstudiantes = false;
+
+    this.mostrarToastMateria(
+      `Ahora estás viendo el aula de ${estudiante.nombre}`,
+      'success'
+    );
+
+    this.cargarMaterias();
+  }
+
+  salirModoAula(): void {
+    this.apiService.salirModoAula();
+
+    this.mostrarToastMateria(
+      'Regresaste a la vista del administrador',
+      'success'
+    );
+
+    this.cargarMaterias();
+  }
+
+  guardarMateria(
+    datos: MateriaFormularioDatos
+  ): void {
+    if (
+      !this.esAdministrador ||
+      this.guardandoMateria
+    ) {
+      return;
+    }
+
+    this.guardandoMateria = true;
+
+    const editando =
+      this.materiaEnEdicion !== null;
+
+    const peticion = this.materiaEnEdicion
+      ? this.apiService.actualizarMateria(
+          this.materiaEnEdicion.id,
+          datos
+        )
+      : this.apiService.crearMateria(datos);
+
+    peticion.subscribe({
+      next: () => {
+        this.guardandoMateria = false;
+        this.mostrarFormularioMateria = false;
+        this.materiaEnEdicion = null;
+
+        this.mostrarToastMateria(
+          editando
+            ? 'Materia actualizada correctamente'
+            : 'Materia creada correctamente',
+          'success'
+        );
+
+        this.cargarMaterias();
+      },
+      error: (error: HttpErrorResponse) => {
+        console.error(
+          'Error al guardar materia:',
+          error
+        );
+
+        this.guardandoMateria = false;
+
+        this.mostrarToastMateria(
+          error.error?.error ??
+            'No se pudo guardar la materia.',
+          'danger'
+        );
+      }
+    });
+  }
+
+  async solicitarEliminarMateria(
+    materia: Materia,
+    evento: Event
+  ): Promise<void> {
+    evento.stopPropagation();
+
+    if (
+      !this.esAdministrador ||
+      this.eliminandoMateriaId !== null
+    ) {
+      return;
+    }
+
+    const mensaje =
+      materia.total > 0
+        ? `Esta materia tiene ${materia.total} tarea(s). Al eliminarla, también se eliminarán todas sus tareas asociadas. Esta acción no se puede deshacer.`
+        : 'Esta acción no se puede deshacer.';
+
+    const alerta =
+      await this.alertController.create({
+        header: '¿Eliminar esta materia?',
+        message: mensaje,
+        buttons: [
+          {
+            text: 'Cancelar',
+            role: 'cancel'
+          },
+          {
+            text: 'Eliminar',
+            role: 'destructive',
+            handler: () => {
+              this.eliminarMateria(materia);
+            }
+          }
+        ]
+      });
+
+    await alerta.present();
+  }
+
+  eliminarMateria(
+    materia: Materia
+  ): void {
+    if (
+      !this.esAdministrador ||
+      this.eliminandoMateriaId !== null
+    ) {
+      return;
+    }
+
+    this.eliminandoMateriaId = materia.id;
+
+    this.apiService
+      .eliminarMateria(materia.id)
+      .subscribe({
+        next: () => {
+          this.eliminandoMateriaId = null;
+
+          this.mostrarToastMateria(
+            'Materia eliminada correctamente',
+            'success'
+          );
+
+          this.cargarMaterias();
+        },
+        error: (error: HttpErrorResponse) => {
+          console.error(
+            'Error al eliminar la materia:',
+            error
+          );
+
+          this.eliminandoMateriaId = null;
+
+          this.mostrarToastMateria(
+            error.error?.error ??
+              'No se pudo eliminar la materia.',
+            'danger'
+          );
+        }
+      });
+  }
+
+  mostrarToastMateria(
+    mensaje: string,
+    color: 'success' | 'danger'
+  ): void {
+    this.toastMensaje = mensaje;
+    this.toastColor = color;
+    this.toastAbierto = true;
   }
 
   obtenerIniciales(): string {
