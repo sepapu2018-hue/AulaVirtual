@@ -35,6 +35,28 @@
   </ion-toolbar>
 </ion-header>
 
+@if (modoAula) {
+  <section class="modo-aula-banner">
+
+    <span class="modo-aula-icono">
+      👁
+    </span>
+
+    <span>
+      Viendo el aula de
+      <strong>{{ modoAula.nombre }}</strong>
+      · modo administrador
+    </span>
+
+    <button
+      type="button"
+      (click)="salirModoAula()">
+      Salir
+    </button>
+
+  </section>
+}
+
 <ion-content>
 
   <section class="hero">
@@ -76,6 +98,29 @@
       showClearButton="focus"
       class="buscador">
     </ion-searchbar>
+
+    @if (esAdministrador) {
+      <ion-button
+        type="button"
+        class="boton-nueva-materia"
+        (click)="abrirNuevaMateria()">
+
+        Nueva materia
+
+      </ion-button>
+    }
+
+    @if (esAdministrador) {
+      <ion-button
+        type="button"
+        fill="outline"
+        class="boton-gestionar-estudiantes"
+        (click)="abrirGestionEstudiantes()">
+
+        Gestionar estudiantes
+
+      </ion-button>
+    }
 
     @if (cargando) {
       <div class="estado">
@@ -177,13 +222,68 @@
                 [value]="obtenerProgreso(materia)">
               </ion-progress-bar>
 
-              <ion-button
-                expand="block"
-                fill="outline"
-                class="boton-ver-materia"
-                (click)="abrirMateria(materia)">
-                Ver materia
-              </ion-button>
+              <div class="acciones-materia">
+
+                <ion-button
+                  expand="block"
+                  fill="outline"
+                  class="boton-ver-materia"
+                  (click)="abrirMateria(materia)">
+                  Ver materia
+                </ion-button>
+
+                @if (esAdministrador) {
+                  <div class="acciones-materia">
+
+                    <ion-button
+                      type="button"
+                      size="small"
+                      fill="clear"
+                      class="boton-editar-materia"
+                      [disabled]="
+                        eliminandoMateriaId === materia.id
+                      "
+                      (click)="
+                        abrirEditarMateria(
+                          materia,
+                          $event
+                        )
+                      ">
+
+                      Editar
+
+                    </ion-button>
+
+                    <ion-button
+                      type="button"
+                      size="small"
+                      fill="clear"
+                      class="boton-eliminar-materia"
+                      [disabled]="
+                        eliminandoMateriaId === materia.id
+                      "
+                      (click)="
+                        solicitarEliminarMateria(
+                          materia,
+                          $event
+                        )
+                      ">
+
+                      @if (
+                        eliminandoMateriaId === materia.id
+                      ) {
+                        Eliminando...
+                      } @else {
+                        Eliminar
+                      }
+
+                    </ion-button>
+
+                  </div>
+                }
+
+              </div>
+
 
             </ion-card-content>
 
@@ -196,3 +296,51 @@
   </main>
 
 </ion-content>
+
+<ion-modal
+  class="materia-form-modal"
+  [isOpen]="mostrarFormularioMateria"
+  [backdropDismiss]="!guardandoMateria"
+  (didDismiss)="cerrarFormularioMateria()">
+
+  <ng-template>
+
+    <app-materia-form
+      [materia]="materiaEnEdicion"
+      [guardando]="guardandoMateria"
+      (cancelarFormulario)="
+        cerrarFormularioMateria()
+      "
+      (enviarFormulario)="
+        guardarMateria($event)
+      ">
+    </app-materia-form>
+
+  </ng-template>
+
+</ion-modal>
+
+<ion-toast
+  [isOpen]="toastAbierto"
+  [message]="toastMensaje"
+  [color]="toastColor"
+  [duration]="2500"
+  position="bottom"
+  (didDismiss)="toastAbierto = false">
+</ion-toast>
+
+<ion-modal
+  class="gestion-estudiantes-modal"
+  [isOpen]="mostrarGestionEstudiantes"
+  (didDismiss)="cerrarGestionEstudiantes()">
+
+  <ng-template>
+
+    <app-gestion-estudiantes
+      (cerrarModal)="cerrarGestionEstudiantes()"
+      (aulaSeleccionada)="entrarModoAula($event)">
+    </app-gestion-estudiantes>
+
+  </ng-template>
+
+</ion-modal>

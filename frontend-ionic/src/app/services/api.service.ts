@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { HttpClient, HttpHeaders } from '@angular/common/http';
+import { HttpClient, HttpEvent, HttpHeaders, HttpInterceptorFn, HttpRequest } from '@angular/common/http';
 import { Observable } from 'rxjs';
 
 export interface Usuario {
@@ -7,6 +7,12 @@ export interface Usuario {
   nombre: string;
   correo: string;
   rol: 'admin' | 'estudiante';
+}
+
+export interface Estudiante {
+  id: number;
+  nombre: string;
+  correo: string;
 }
 
 export interface LoginResponse {
@@ -54,6 +60,51 @@ export interface Tarea {
   mi_nota: number | string | null;
 }
 
+export interface ArchivoTarea {
+  id: number;
+  tarea_id: number;
+  usuario_id: number | null;
+  nombre_original: string;
+  ruta: string;
+  fecha_subida: string;
+  usuario_nombre: string | null;
+}
+
+export interface RegistroEntrega {
+  usuario_id: number;
+  nombre: string;
+  num_archivos: number;
+  nota: number | string | null;
+}
+
+export interface NotaTarea {
+  nota: number | string | null;
+  comentario: string | null;
+}
+
+export interface TareaDetalle {
+  id: number;
+  materia_id: number;
+  titulo: string;
+  descripcion: string | null;
+  prioridad: 'alta' | 'media' | 'baja';
+  fecha_limite: string | null;
+  completada: boolean;
+  archivo_nombre: string | null;
+  archivo_ruta: string | null;
+  fecha_creacion: string;
+  archivos: ArchivoTarea[];
+  mi_nota: NotaTarea | null;
+}
+
+export interface Comentario {
+  id: number;
+  contenido: string;
+  fecha_creacion: string;
+  autor_nombre: string;
+  autor_rol: string;
+}
+
 export interface Anuncio {
   id: number;
   materia_id: number;
@@ -61,9 +112,63 @@ export interface Anuncio {
   fecha_creacion: string;
 }
 
+export interface ModoAulaEstudiante {
+  id: number;
+  nombre: string;
+}
+
+const MODO_AULA_KEY = 'gt_modo_aula';
+
+export const modoAulaInterceptor: HttpInterceptorFn = (
+  request,
+  next
+) => {
+  const usuarioTexto =
+    localStorage.getItem('gt_usuario');
+
+  const modoTexto =
+    sessionStorage.getItem(MODO_AULA_KEY);
+
+  if (!usuarioTexto || !modoTexto) {
+    return next(request);
+  }
+
+  try {
+    const usuario = JSON.parse(usuarioTexto);
+    const modo: ModoAulaEstudiante =
+      JSON.parse(modoTexto);
+
+    const endpointCompatible =
+      /\/api\/(materias|tareas|anuncios)(\/|$)/
+        .test(request.url);
+
+    if (
+      usuario.rol !== 'admin' ||
+      !endpointCompatible ||
+      request.params.has('como')
+    ) {
+      return next(request);
+    }
+
+    return next(
+      request.clone({
+        params: request.params.set(
+          'como',
+          String(modo.id)
+        )
+      })
+    );
+  } catch {
+    sessionStorage.removeItem(MODO_AULA_KEY);
+
+    return next(request);
+  }
+};
+
 @Injectable({
   providedIn: 'root'
 })
+
 export class ApiService {
 
   private readonly apiUrl = 'http://localhost:3001/api';
@@ -102,6 +207,158 @@ export class ApiService {
     );
   }
 
+  crearMateria(
+    datos: {
+      nombre: string;
+      profesor: string;
+    }
+  ): Observable<unknown> {
+    const token = this.obtenerToken();
+
+    const headers = new HttpHeaders({
+      Authorization: `Bearer ${token}`
+    });
+
+    return this.http.post(
+      `${this.apiUrl}/materias`,
+      datos,
+      { headers }
+    );
+  }
+
+  actualizarMateria(
+    materiaId: number,
+    datos: {
+      nombre: string;
+      profesor: string;
+    }
+  ): Observable<unknown> {
+    const token = this.obtenerToken();
+
+    const headers = new HttpHeaders({
+      Authorization: `Bearer ${token}`
+    });
+
+    return this.http.put(
+      `${this.apiUrl}/materias/${materiaId}`,
+      datos,
+      { headers }
+    );
+  }
+
+  eliminarMateria(
+    materiaId: number
+  ): Observable<unknown> {
+    const token = this.obtenerToken();
+
+    const headers = new HttpHeaders({
+      Authorization: `Bearer ${token}`
+    });
+
+    return this.http.delete(
+      `${this.apiUrl}/materias/${materiaId}`,
+      { headers }
+    );
+  }
+
+  obtenerEstudiantes(): Observable<Estudiante[]> {
+    const token = this.obtenerToken();
+
+    const headers = new HttpHeaders({
+      Authorization: `Bearer ${token}`
+    });
+
+    return this.http.get<Estudiante[]>(
+      `${this.apiUrl}/usuarios`,
+      { headers }
+    );
+  }
+
+  crearEstudiante(
+    datos: {
+      nombre: string;
+      correo: string;
+      password: string;
+    }
+  ): Observable<Estudiante> {
+    const token = this.obtenerToken();
+
+    const headers = new HttpHeaders({
+      Authorization: `Bearer ${token}`
+    });
+
+    return this.http.post<Estudiante>(
+      `${this.apiUrl}/usuarios`,
+      datos,
+      { headers }
+    );
+  }
+
+  eliminarEstudiante(
+    estudianteId: number
+  ): Observable<unknown> {
+    const token = this.obtenerToken();
+
+    const headers = new HttpHeaders({
+      Authorization: `Bearer ${token}`
+    });
+
+    return this.http.delete(
+      `${this.apiUrl}/usuarios/${estudianteId}`,
+      { headers }
+    );
+}
+
+  obtenerEstudiantesMateria(
+    materiaId: number
+  ): Observable<Estudiante[]> {
+    const token = this.obtenerToken();
+
+    const headers = new HttpHeaders({
+      Authorization: `Bearer ${token}`
+    });
+
+    return this.http.get<Estudiante[]>(
+      `${this.apiUrl}/materias/${materiaId}/estudiantes`,
+      { headers }
+    );
+  }
+
+  inscribirEstudiante(
+    materiaId: number,
+    usuarioId: number
+  ): Observable<unknown> {
+    const token = this.obtenerToken();
+
+    const headers = new HttpHeaders({
+      Authorization: `Bearer ${token}`
+    });
+
+    return this.http.post(
+      `${this.apiUrl}/materias/${materiaId}/estudiantes`,
+      {
+        usuario_id: usuarioId
+      },
+      { headers }
+    );
+  }
+
+  quitarEstudianteMateria(
+    materiaId: number,
+    usuarioId: number
+  ): Observable<unknown> {
+    const token = this.obtenerToken();
+
+    const headers = new HttpHeaders({
+      Authorization: `Bearer ${token}`
+    });
+
+    return this.http.delete(
+      `${this.apiUrl}/materias/${materiaId}/estudiantes/${usuarioId}`,
+      { headers }
+    );
+  }
+
   obtenerTareasPorMateria(
     materiaId: number
   ): Observable<Tarea[]> {
@@ -113,6 +370,150 @@ export class ApiService {
 
     return this.http.get<Tarea[]>(
       `${this.apiUrl}/tareas?materia_id=${materiaId}`,
+      { headers }
+    );
+  }
+
+  obtenerDetalleTarea(
+    tareaId: number
+  ): Observable<TareaDetalle> {
+    const token = this.obtenerToken();
+
+    const headers = new HttpHeaders({
+      Authorization: `Bearer ${token}`
+    });
+
+    return this.http.get<TareaDetalle>(
+      `${this.apiUrl}/tareas/${tareaId}`,
+      { headers }
+    );
+  }
+
+  obtenerComentarios(
+    tareaId: number
+  ): Observable<Comentario[]> {
+    const token = this.obtenerToken();
+
+    const headers = new HttpHeaders({
+      Authorization: `Bearer ${token}`
+    });
+
+    return this.http.get<Comentario[]>(
+      `${this.apiUrl}/tareas/${tareaId}/comentarios`,
+      { headers }
+    );
+  }
+
+  crearComentario(
+    tareaId: number,
+    contenido: string
+  ): Observable<unknown> {
+    const token = this.obtenerToken();
+
+    const headers = new HttpHeaders({
+      Authorization: `Bearer ${token}`
+    });
+
+    return this.http.post(
+      `${this.apiUrl}/tareas/${tareaId}/comentarios`,
+      { contenido },
+      { headers }
+    );
+  }
+
+  eliminarComentario(
+    comentarioId: number
+  ): Observable<unknown> {
+    const token = this.obtenerToken();
+
+    const headers = new HttpHeaders({
+      Authorization: `Bearer ${token}`
+    });
+
+    return this.http.delete(
+      `${this.apiUrl}/comentarios/${comentarioId}`,
+      { headers }
+    );
+  }
+
+  obtenerUrlArchivo(ruta: string): string {
+    return `${this.apiUrl}/archivos/${encodeURIComponent(ruta)}`;
+  }
+
+  subirArchivoTarea(
+    tareaId: number,
+    archivo: File
+  ): Observable<HttpEvent<unknown>> {
+    const token = this.obtenerToken();
+
+    const headers = new HttpHeaders({
+      Authorization: `Bearer ${token}`
+    });
+
+    const formData = new FormData();
+    formData.append('archivo', archivo);
+
+    const peticion = new HttpRequest(
+      'POST',
+      `${this.apiUrl}/tareas/${tareaId}/archivo`,
+      formData,
+      {
+        headers,
+        reportProgress: true
+      }
+    );
+
+    return this.http.request(peticion);
+  }
+
+  eliminarArchivoTarea(
+    tareaId: number,
+    archivoId: number
+  ): Observable<unknown> {
+    const token = this.obtenerToken();
+
+    const headers = new HttpHeaders({
+      Authorization: `Bearer ${token}`
+    });
+
+    return this.http.delete(
+      `${this.apiUrl}/tareas/${tareaId}/archivo/${archivoId}`,
+      { headers }
+    );
+  }
+
+  obtenerRegistroEntregas(
+    tareaId: number
+  ): Observable<RegistroEntrega[]> {
+    const token = this.obtenerToken();
+
+    const headers = new HttpHeaders({
+      Authorization: `Bearer ${token}`
+    });
+
+    return this.http.get<RegistroEntrega[]>(
+      `${this.apiUrl}/tareas/${tareaId}/registro`,
+      { headers }
+    );
+  }
+
+  guardarNotaTarea(
+    tareaId: number,
+    usuarioId: number,
+    nota: number | null
+  ): Observable<unknown> {
+    const token = this.obtenerToken();
+
+    const headers = new HttpHeaders({
+      Authorization: `Bearer ${token}`
+    });
+
+    return this.http.put(
+      `${this.apiUrl}/tareas/${tareaId}/notas`,
+      {
+        usuario_id: usuarioId,
+        nota
+      },
       { headers }
     );
   }
@@ -219,6 +620,38 @@ export class ApiService {
     );
   }
 
+  crearAnuncio(
+    materiaId: number,
+    contenido: string
+  ): Observable<unknown> {
+    const token = this.obtenerToken();
+
+    const headers = new HttpHeaders({
+      Authorization: `Bearer ${token}`
+    });
+
+    return this.http.post(
+      `${this.apiUrl}/materias/${materiaId}/anuncios`,
+      { contenido },
+      { headers }
+    );
+  }
+
+  eliminarAnuncio(
+    anuncioId: number
+  ): Observable<unknown> {
+    const token = this.obtenerToken();
+
+    const headers = new HttpHeaders({
+      Authorization: `Bearer ${token}`
+    });
+
+    return this.http.delete(
+      `${this.apiUrl}/anuncios/${anuncioId}`,
+      { headers }
+    );
+  }
+
   guardarSesion(respuesta: LoginResponse): void {
     localStorage.setItem('gt_token', respuesta.token);
     localStorage.setItem(
@@ -230,6 +663,7 @@ export class ApiService {
   cerrarSesion(): void {
     localStorage.removeItem('gt_token');
     localStorage.removeItem('gt_usuario');
+    sessionStorage.removeItem(MODO_AULA_KEY);
   }
 
   obtenerToken(): string | null {
@@ -247,6 +681,41 @@ export class ApiService {
       return JSON.parse(usuarioGuardado) as Usuario;
     } catch {
       this.cerrarSesion();
+      return null;
+    }
+  }
+
+  entrarModoAula(
+    estudiante: Estudiante
+  ): void {
+    const modo: ModoAulaEstudiante = {
+      id: estudiante.id,
+      nombre: estudiante.nombre
+    };
+
+    sessionStorage.setItem(
+      MODO_AULA_KEY,
+      JSON.stringify(modo)
+    );
+  }
+
+  salirModoAula(): void {
+    sessionStorage.removeItem(MODO_AULA_KEY);
+  }
+
+  obtenerModoAula():
+    ModoAulaEstudiante | null {
+    const valor =
+      sessionStorage.getItem(MODO_AULA_KEY);
+
+    if (!valor) {
+      return null;
+    }
+
+    try {
+      return JSON.parse(valor);
+    } catch {
+      sessionStorage.removeItem(MODO_AULA_KEY);
       return null;
     }
   }

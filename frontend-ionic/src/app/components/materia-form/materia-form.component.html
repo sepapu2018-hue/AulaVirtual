@@ -1,0 +1,130 @@
+<ion-header>
+  <ion-toolbar>
+
+    <ion-title>
+      {{ editando ? 'Editar materia' : 'Nueva materia' }}
+    </ion-title>
+
+    <ion-buttons slot="end">
+      <ion-button
+        type="button"
+        [disabled]="guardando"
+        (click)="cancelar()">
+        Cerrar
+      </ion-button>
+    </ion-buttons>
+
+  </ion-toolbar>
+</ion-header>
+
+<ion-content>
+
+  <div class="formulario-contenedor">
+
+    <div class="formulario-presentacion">
+      <span>📚</span>
+
+      <div>
+        <h1>
+          {{
+            editando
+              ? 'Modificar materia'
+              : 'Agregar materia'
+          }}
+        </h1>
+
+        <p>
+          {{
+            editando
+              ? 'Actualiza el nombre y el profesor.'
+              : 'Registra una nueva materia en el aula.'
+          }}
+        </p>
+      </div>
+    </div>
+
+    <form
+      class="materia-formulario"
+      (ngSubmit)="guardar()">
+
+      <div class="campo">
+        <label>Nombre de la materia</label>
+
+        <ion-input
+          name="nombre"
+          [(ngModel)]="nombre"
+          fill="outline"
+          placeholder="Ej: Arquitectura de Software"
+          maxlength="100"
+          [disabled]="guardando">
+        </ion-input>
+      </div>
+
+      <div class="campo">
+        <label>Profesor</label>
+
+        <ion-input
+          name="profesor"
+          [(ngModel)]="profesor"
+          fill="outline"
+          placeholder="Ej: Ing. Juan Pérez"
+          maxlength="100"
+          [disabled]="guardando">
+        </ion-input>
+
+        <small>
+          Este campo es opcional.
+        </small>
+      </div>
+
+      @if (mensajeError) {
+        <p class="mensaje-error">
+          {{ mensajeError }}
+        </p>
+      }
+
+      <div class="botones">
+
+        <ion-button
+          type="button"
+          expand="block"
+          class="boton-cancelar"
+          [disabled]="guardando"
+          (click)="cancelar()">
+          Cancelar
+        </ion-button>
+
+        <ion-button
+          type="submit"
+          expand="block"
+          class="boton-guardar"
+          [disabled]="guardando">
+
+          @if (guardando) {
+            <ion-spinner name="crescent">
+            </ion-spinner>
+
+            <span>
+              {{
+                editando
+                  ? 'Actualizando...'
+                  : 'Guardando...'
+              }}
+            </span>
+          } @else {
+            {{
+              editando
+                ? 'Actualizar materia'
+                : 'Crear materia'
+            }}
+          }
+
+        </ion-button>
+
+      </div>
+
+    </form>
+
+  </div>
+
+</ion-content>

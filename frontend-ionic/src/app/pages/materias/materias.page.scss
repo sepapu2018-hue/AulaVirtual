@@ -98,6 +98,44 @@ ion-content {
   font-size: 12px;
 }
 
+.modo-aula-banner {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  flex-wrap: wrap;
+
+  padding: 10px 16px;
+
+  background: #fff7d6;
+  color: #6b4f00;
+
+  font-size: 12px;
+  text-align: center;
+}
+
+.modo-aula-icono {
+  font-size: 16px;
+}
+
+.modo-aula-banner strong {
+  font-weight: 800;
+}
+
+.modo-aula-banner button {
+  padding: 5px 11px;
+  border: 1px solid #d6b74a;
+  border-radius: 6px;
+
+  background: #ffffff;
+  color: #6b4f00;
+
+  font-family: inherit;
+  font-size: 11px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
 .hero {
   padding: 28px 18px 24px;
   background: linear-gradient(
@@ -183,6 +221,20 @@ ion-content {
   padding: 0;
   margin-bottom: 18px;
 }
+
+.boton-nueva-materia {
+  min-height: 42px;
+  margin: 0;
+
+  --background: #1e3a5f;
+  --border-radius: 8px;
+  --box-shadow: none;
+
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: none;
+}
+
 
 .materias-grid {
   display: grid;
@@ -317,4 +369,96 @@ ion-progress-bar {
   font-size: 12px;
   font-weight: 700;
   text-transform: none;
+}
+
+.boton-editar-materia {
+  min-height: 32px;
+  margin: 0;
+
+  --background: #eaeff5;
+  --color: #1e3a5f;
+  --border-radius: 6px;
+  --box-shadow: none;
+
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: none;
+}
+
+.acciones-materia {
+  display: flex;
+  justify-content: flex-end;
+  gap: 6px;
+}
+
+.boton-eliminar-materia {
+  min-height: 32px;
+  margin: 0;
+
+  --background: #faeeee;
+  --background-activated: #f3dcdc;
+  --color: #9c2b2b;
+  --border-radius: 6px;
+  --box-shadow: none;
+
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: none;
+}
+
+.boton-eliminar-materia[disabled] {
+  opacity: 0.6;
+}
+
+ion-modal.materia-form-modal {
+  --width: 100%;
+  --height: 82%;
+  --border-radius: 20px 20px 0 0;
+}
+
+ion-modal.materia-form-modal::part(content) {
+  background: #f7f8fa;
+  color-scheme: light;
+}
+
+@media (min-width: 700px) {
+  ion-modal.materia-form-modal {
+    --width: 540px;
+    --height: 620px;
+    --border-radius: 18px;
+  }
+}
+
+.boton-gestionar-estudiantes {
+  min-height: 42px;
+  margin: 0;
+
+  --background: #ffffff;
+  --border-color: #1e3a5f;
+  --color: #1e3a5f;
+  --border-radius: 8px;
+  --box-shadow: none;
+
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: none;
+}
+
+ion-modal.gestion-estudiantes-modal {
+  --width: 100%;
+  --height: 94%;
+  --border-radius: 20px 20px 0 0;
+}
+
+ion-modal.gestion-estudiantes-modal::part(content) {
+  background: #f7f8fa;
+  color-scheme: light;
+}
+
+@media (min-width: 700px) {
+  ion-modal.gestion-estudiantes-modal {
+    --width: 680px;
+    --height: 780px;
+    --border-radius: 18px;
+  }
 }

@@ -58,6 +58,34 @@
 
       </div>
 
+      @if (
+        tarea.mi_nota &&
+        tarea.mi_nota.nota !== null &&
+        tarea.mi_nota.nota !== undefined
+      ) {
+          <div class="mi-nota">
+
+            <span class="mi-nota-icono">
+              ★
+            </span>
+
+            <div>
+              <strong>
+                Tu calificación:
+                {{ tarea.mi_nota.nota }}/10
+              </strong>
+
+              @if (tarea.mi_nota.comentario) {
+                <p>
+                  {{ tarea.mi_nota.comentario }}
+                </p>
+              }
+
+            </div>
+
+          </div>
+        }
+
       <div class="descripcion">
         <h2>Descripción</h2>
 
@@ -87,30 +115,312 @@
         </div>
       </div>
 
-      @if (tarea.num_archivos > 0) {
-        <div class="archivo-resumen">
-          <span>📄</span>
+      @if (tarea.archivos.length > 0) {
+        <div class="lista-archivos">
 
-          <div>
-            <strong>
-              {{ tarea.num_archivos }}
-              archivo{{
-                tarea.num_archivos === 1
-                  ? ''
-                  : 's'
-              }}
-            </strong>
+          @for (
+            archivo of tarea.archivos;
+            track archivo.id
+          ) {
+            <article class="archivo-item">
 
-            <p>
-              Abre esta sección para consultar
-              la entrega.
-            </p>
-          </div>
+              <span class="archivo-icono">
+                📄
+              </span>
+
+              <div class="archivo-informacion">
+
+                <a
+                  class="archivo-enlace"
+                  [href]="obtenerUrlArchivo(archivo.ruta)"
+                  target="_blank"
+                  rel="noopener">
+
+                  {{ archivo.nombre_original }}
+
+                </a>
+
+                <div class="archivo-meta">
+
+                  @if (archivo.usuario_nombre) {
+                    <span>
+                      Entregado por
+                      {{ archivo.usuario_nombre }}
+                    </span>
+                  }
+
+                  <span>
+                    {{
+                      formatearFechaHora(
+                        archivo.fecha_subida
+                      )
+                    }}
+                  </span>
+
+                </div>
+
+              </div>
+
+              @if (!entregaBloqueada) {
+                <button
+                  type="button"
+                  class="archivo-eliminar"
+                  [disabled]="
+                    eliminandoArchivoId === archivo.id
+                  "
+                  (click)="eliminarArchivo(archivo.id)">
+
+                  @if (
+                    eliminandoArchivoId === archivo.id
+                  ) {
+                    <ion-spinner name="crescent">
+                    </ion-spinner>
+                  } @else {
+                    ×
+                  }
+
+                </button>
+              }
+
+            </article>
+          }
+
         </div>
       } @else {
         <div class="seccion-vacia">
           No hay archivos adjuntos.
         </div>
+      }
+
+      @if (entregaBloqueada) {
+        <div class="archivo-bloqueado">
+          {{ mensajeBloqueoArchivo }}
+        </div>
+      } @else {
+
+        @if (!archivoSeleccionado) {
+          <div
+            class="dropzone"
+            (dragover)="permitirSoltarArchivo($event)"
+            (drop)="soltarArchivo($event)"
+            (click)="inputArchivo.click()">
+
+            <span class="dropzone-icono">⇧</span>
+
+            <p>
+              Arrastra el archivo aquí o
+              <strong>selecciona uno</strong>
+            </p>
+
+            <small>Máximo 5 MB</small>
+
+          </div>
+
+          <input
+            #inputArchivo
+            type="file"
+            hidden
+            (change)="seleccionarArchivo($event)">
+        }
+
+        @if (archivoSeleccionado) {
+          <div class="archivo-pendiente">
+
+            <div class="archivo-pendiente-info">
+              <span>📄</span>
+
+              <strong>
+                {{ archivoSeleccionado.name }}
+              </strong>
+            </div>
+
+            @if (subiendoArchivo) {
+              <div class="progreso-archivo">
+
+                <ion-progress-bar
+                  [value]="progresoArchivo / 100">
+                </ion-progress-bar>
+
+                <span>
+                  {{ progresoArchivo }}%
+                </span>
+
+              </div>
+            }
+
+            <div class="archivo-botones">
+
+              <ion-button
+                type="button"
+                fill="solid"
+                class="boton-cancelar-archivo"
+                [disabled]="subiendoArchivo"
+                (click)="cancelarArchivo()">
+                Cancelar
+              </ion-button>
+
+              <ion-button
+                type="button"
+                class="boton-subir-archivo"
+                [disabled]="subiendoArchivo"
+                (click)="subirArchivo()">
+
+                @if (subiendoArchivo) {
+                  <ion-spinner name="crescent">
+                  </ion-spinner>
+                } @else {
+                  Guardar archivo
+                }
+
+              </ion-button>
+
+            </div>
+
+          </div>
+        }
+
+      }
+
+      @if (mensajeArchivo) {
+        <ion-text [color]="tipoMensajeArchivo">
+          <p class="mensaje-archivo">
+            {{ mensajeArchivo }}
+          </p>
+        </ion-text>
+      }
+
+      @if (esAdministrador) {
+        <section class="detalle-seccion">
+
+          <div class="seccion-titulo">
+            <span class="seccion-icono">📋</span>
+
+            <div>
+              <h2>Registro de entregas</h2>
+              <p>
+                Revisión y calificación de estudiantes
+              </p>
+            </div>
+          </div>
+
+          @if (cargandoRegistro) {
+            <div class="registro-cargando">
+              <ion-spinner name="crescent">
+              </ion-spinner>
+
+              <span>
+                Cargando entregas...
+              </span>
+            </div>
+          }
+
+          @if (
+            !cargandoRegistro &&
+            registroEntregas.length === 0
+          ) {
+            <div class="seccion-vacia">
+              No hay estudiantes inscritos
+              en esta materia.
+            </div>
+          }
+
+          @if (
+            !cargandoRegistro &&
+            registroEntregas.length > 0
+          ) {
+            <div class="registro-lista">
+
+              @for (
+                fila of registroEntregas;
+                track fila.usuario_id
+              ) {
+                <article class="registro-fila">
+
+                  <div class="registro-informacion">
+
+                    <strong>
+                      {{ fila.nombre }}
+                    </strong>
+
+                    <span
+                      class="registro-estado"
+                      [class.registro-entregado]="
+                        fila.num_archivos > 0
+                      "
+                      [class.registro-pendiente]="
+                        fila.num_archivos === 0
+                      ">
+
+                      @if (fila.num_archivos > 0) {
+                        ✓ Entregó
+                        ({{ fila.num_archivos }})
+                      } @else {
+                        ⚠ No ha entregado
+                      }
+
+                    </span>
+
+                  </div>
+
+                  <div class="registro-calificacion">
+
+                    <input
+                      type="number"
+                      min="0"
+                      max="10"
+                      step="0.1"
+                      placeholder="—"
+                      [(ngModel)]="fila.nota"
+                      [ngModelOptions]="{
+                        standalone: true
+                      }"
+                      [disabled]="
+                        guardandoNotaUsuarioId ===
+                        fila.usuario_id
+                      ">
+
+                    <span class="nota-total">
+                      /10
+                    </span>
+
+                    <ion-button
+                      type="button"
+                      size="small"
+                      class="boton-guardar-nota"
+                      [disabled]="
+                        guardandoNotaUsuarioId !== null
+                      "
+                      (click)="guardarNota(fila)">
+
+                      @if (
+                        guardandoNotaUsuarioId ===
+                        fila.usuario_id
+                      ) {
+                        <ion-spinner name="crescent">
+                        </ion-spinner>
+                      } @else {
+                        Guardar
+                      }
+
+                    </ion-button>
+
+                  </div>
+
+                </article>
+              }
+
+            </div>
+          }
+
+          @if (mensajeRegistro) {
+            <ion-text [color]="tipoMensajeRegistro">
+              <p class="mensaje-registro">
+                {{ mensajeRegistro }}
+              </p>
+            </ion-text>
+          }
+
+        </section>
       }
 
     </section>
@@ -126,10 +436,126 @@
         </div>
       </div>
 
-      <div class="seccion-vacia">
-        Los comentarios se conectarán
-        en el siguiente bloque.
-      </div>
+      @if (cargandoComentarios) {
+        <div class="comentarios-cargando">
+          <ion-spinner name="crescent"></ion-spinner>
+          <span>Cargando comentarios...</span>
+        </div>
+      }
+
+      @if (
+        !cargandoComentarios &&
+        comentarios.length === 0
+      ) {
+        <div class="comentario-vacio">
+          Todavía no hay comentarios.
+        </div>
+      }
+
+      @if (
+        !cargandoComentarios &&
+        comentarios.length > 0
+      ) {
+        <div class="lista-comentarios">
+
+          @for (
+            comentario of comentarios;
+            track comentario.id
+          ) {
+            <article class="comentario-item">
+
+              <div class="comentario-cabecera">
+
+                <strong>
+                  {{ comentario.autor_nombre }}
+                </strong>
+
+                <span class="comentario-rol">
+                  {{ obtenerTextoRol(comentario) }}
+                </span>
+
+                <button
+                  type="button"
+                  class="comentario-eliminar"
+                  title="Eliminar comentario"
+                  [disabled]="
+                    eliminandoComentarioId ===
+                    comentario.id
+                  "
+                  (click)="
+                    eliminarComentario(comentario)
+                  ">
+
+                  @if (
+                    eliminandoComentarioId ===
+                    comentario.id
+                  ) {
+                    <ion-spinner name="crescent">
+                    </ion-spinner>
+                  } @else {
+                    ×
+                  }
+
+                </button>
+
+              </div>
+
+              <p class="comentario-texto">
+                {{ comentario.contenido }}
+              </p>
+
+              <span class="comentario-fecha">
+                {{
+                  formatearFechaHora(
+                    comentario.fecha_creacion
+                  )
+                }}
+              </span>
+
+            </article>
+          }
+
+        </div>
+      }
+
+      <form
+        class="form-comentario"
+        (ngSubmit)="publicarComentario()">
+
+        <ion-textarea
+          name="comentarioContenido"
+          [(ngModel)]="comentarioContenido"
+          fill="outline"
+          placeholder="Escribe un comentario."
+          [autoGrow]="true"
+          rows="2"
+          maxlength="500"
+          [disabled]="publicandoComentario">
+        </ion-textarea>
+
+        <ion-button
+          type="submit"
+          class="boton-comentar"
+          [disabled]="publicandoComentario">
+
+          @if (publicandoComentario) {
+            <ion-spinner name="crescent">
+            </ion-spinner>
+          } @else {
+            Comentar
+          }
+
+        </ion-button>
+
+      </form>
+
+      @if (mensajeComentarios) {
+        <ion-text color="danger">
+          <p class="mensaje-comentarios">
+            {{ mensajeComentarios }}
+          </p>
+        </ion-text>
+      }
 
     </section>
 
