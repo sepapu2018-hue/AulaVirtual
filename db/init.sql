@@ -10,6 +10,7 @@ CREATE TABLE IF NOT EXISTS usuarios (
 CREATE TABLE IF NOT EXISTS materias (
     id SERIAL PRIMARY KEY,
     usuario_id INTEGER NOT NULL REFERENCES usuarios(id) ON DELETE CASCADE,
+    profesor_id INTEGER REFERENCES usuarios(id) ON DELETE SET NULL,
     nombre VARCHAR(150) NOT NULL,
     profesor VARCHAR(150),
     orden INTEGER,

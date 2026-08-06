@@ -1,0 +1,71 @@
+// Paleta e identidad tipografica de GestorTareas.
+// Inspirada en el lenguaje visual de Apple: tipografia del sistema
+// (sin serif), fondos neutros claros y un unico azul de acento.
+
+:root {
+  // La app está diseñada solo en modo claro.
+  color-scheme: light;
+
+  // Texto y superficies: azul institucional (igual que antes)
+  --gt-ink-900: #0f2138;
+  --gt-ink-800: #16304c;
+  --gt-ink-700: #1e3a5f;
+  --gt-ink-100: #e7edf5;
+  --gt-ink-050: #f3f6fa;
+
+  // Acento (mismo azul, usado en botones y estados activos)
+  --gt-accent: #1e3a5f;
+  --gt-accent-dark: #142944;
+  --gt-amber-700: #b45309;
+  --gt-amber-100: #fdf3e2;
+
+  // Semanticos
+  --gt-success-700: #1f7a3d;
+  --gt-success-100: #e7f7ec;
+
+  --gt-danger-700: #d70015;
+  --gt-danger-100: #fdecec;
+
+  --gt-info-700: #0071e3;
+  --gt-info-100: #e8f0fe;
+
+  // Neutros
+  --gt-paper: #f5f5f7;
+  --gt-surface: #ffffff;
+  --gt-line: #d2d2d7;
+  --gt-line-strong: #bcbcc0;
+  --gt-ink-muted: #6e6e73;
+  --gt-ink-faint: #86868b;
+  --gt-text: #1d1d1f;
+
+  // Tipografia: fuente del sistema, igual en titulos y en interfaz.
+  --gt-font-display: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  --gt-font-body: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+
+  // Overrides de la paleta de Ionic para que todos los componentes
+  // hereden el mismo azul de acento.
+  --ion-color-primary: var(--gt-accent);
+  --ion-color-primary-rgb: 30, 58, 95;
+  --ion-color-primary-contrast: #ffffff;
+  --ion-color-primary-contrast-rgb: 255, 255, 255;
+  --ion-color-primary-shade: var(--gt-accent-dark);
+  --ion-color-primary-tint: #33517a;
+
+  --ion-color-success: var(--gt-success-700);
+  --ion-color-success-rgb: 31, 122, 61;
+  --ion-color-success-contrast: #ffffff;
+  --ion-color-success-contrast-rgb: 255, 255, 255;
+  --ion-color-success-shade: #1b6a35;
+  --ion-color-success-tint: #358a50;
+
+  --ion-color-danger: var(--gt-danger-700);
+  --ion-color-danger-rgb: 215, 0, 21;
+  --ion-color-danger-contrast: #ffffff;
+  --ion-color-danger-contrast-rgb: 255, 255, 255;
+  --ion-color-danger-shade: #bd0013;
+  --ion-color-danger-tint: #db1a2d;
+
+  --ion-font-family: var(--gt-font-body);
+  --ion-background-color: var(--gt-paper);
+  --ion-text-color: var(--gt-text);
+}

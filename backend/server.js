@@ -1,7 +1,5 @@
 const express = require('express');
 const cors = require('cors');
-const helmet = require('helmet');
-const rateLimit = require('express-rate-limit');
 const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
@@ -10,42 +8,15 @@ const jwt = require('jsonwebtoken');
 const pool = require('./db');
 
 const app = express();
-app.use(helmet());
-
-const ALLOWED_ORIGINS = (process.env.ALLOWED_ORIGINS || 'http://localhost:8081')
-  .split(',')
-  .map((origen) => origen.trim())
-  .filter(Boolean);
-app.use(cors({ origin: ALLOWED_ORIGINS }));
-
+app.use(cors());
 app.use(express.json());
 
 const PORT = process.env.PORT || 3000;
 const PRIORIDADES_VALIDAS = ['alta', 'media', 'baja'];
-const JWT_SECRET = process.env.JWT_SECRET;
-if (!JWT_SECRET) {
-  throw new Error('JWT_SECRET no está definido. Configúralo como variable de entorno.');
-}
-
-const loginLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000,
-  limit: 10,
-  standardHeaders: true,
-  legacyHeaders: false,
-  skipSuccessfulRequests: true,
-  message: { error: 'Demasiados intentos de inicio de sesión. Intenta de nuevo en unos minutos.' },
-});
+const JWT_SECRET = process.env.JWT_SECRET || 'gestortareas_dev_secret_2026';
 
 const UPLOADS_DIR = path.join(__dirname, 'uploads');
 if (!fs.existsSync(UPLOADS_DIR)) fs.mkdirSync(UPLOADS_DIR, { recursive: true });
-
-const TIPOS_ARCHIVO_PERMITIDOS = [
-  'application/pdf',
-  'image/png',
-  'image/jpeg',
-  'application/msword',
-  'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-];
 
 const storage = multer.diskStorage({
   destination: (req, file, cb) => cb(null, UPLOADS_DIR),
@@ -57,35 +28,10 @@ const storage = multer.diskStorage({
 
 const upload = multer({
   storage,
-  limits: { fileSize: 5 * 1024 * 1024 },
-  fileFilter: (req, file, cb) => {
-    if (!TIPOS_ARCHIVO_PERMITIDOS.includes(file.mimetype)) {
-      return cb(new Error('TIPO_ARCHIVO_NO_PERMITIDO'));
-    }
-    cb(null, true);
-  },
+  limits: { fileSize: 5 * 1024 * 1024 }
 });
 
-// Solo puede descargar el archivo quien pertenece a la materia de esa tarea
-// (el profesor dueño o un estudiante inscrito). Antes esta ruta era estática
-// y pública: cualquiera con el link directo podía descargar sin iniciar sesión.
-app.get('/api/archivos/:archivo', requireAuth, async (req, res) => {
-  try {
-    const usuarioId = await usuarioEfectivo(req);
-    const archivo = await pool.query(
-      `SELECT a.ruta, a.nombre_original FROM archivos_tarea a
-       JOIN tareas t ON t.id = a.tarea_id
-       JOIN materias m ON m.id = t.materia_id
-       WHERE a.ruta = $1 AND ${VISIBLE_MATERIA.replace(/\$ADMIN/g, '$2').replace(/\$USR/g, '$3')}`,
-      [req.params.archivo, req.usuario.rol === 'admin', usuarioId]
-    );
-    if (archivo.rows.length === 0) return res.status(404).json({ error: 'Archivo no encontrado' });
-    res.sendFile(path.join(UPLOADS_DIR, archivo.rows[0].ruta));
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: 'Error al obtener el archivo' });
-  }
-});
+app.use('/api/archivos', express.static(UPLOADS_DIR));
 
 function generarToken(usuario) {
   return jwt.sign(
@@ -111,13 +57,20 @@ function requireAdmin(req, res, next) {
   next();
 }
 
-// Un "docente" es el admin o un profesor: ambos pueden crear/editar materias y tareas,
-// pero un profesor queda limitado a las suyas (ver VISIBLE_MATERIA más abajo).
-function requireDocente(req, res, next) {
+function requireAdminOProfesor(req, res, next) {
   if (req.usuario.rol !== 'admin' && req.usuario.rol !== 'profesor') {
-    return res.status(403).json({ error: 'No tienes permisos para realizar esta acción' });
+    return res.status(403).json({ error: 'Solo el profesor o el administrador pueden realizar esta acción' });
   }
   next();
+}
+
+// El admin siempre puede gestionar una materia. Un profesor solo puede
+// gestionar las materias que tiene asignadas (materias.profesor_id).
+async function materiaDocente(materiaId, usuario) {
+  if (usuario.rol === 'admin') return true;
+  if (usuario.rol !== 'profesor') return false;
+  const r = await pool.query('SELECT 1 FROM materias WHERE id = $1 AND profesor_id = $2', [materiaId, usuario.id]);
+  return r.rows.length > 0;
 }
 
 // El admin puede actuar "como" un estudiante pasando ?como=<id_estudiante>.
@@ -130,15 +83,14 @@ async function usuarioEfectivo(req) {
   return req.usuario.id;
 }
 
-// Una materia es "visible" para un usuario si es su dueño, esta inscrito en ella,
-// o si es el admin (que puede ver y administrar las materias de cualquier profesor).
-const VISIBLE_MATERIA = `($ADMIN OR m.usuario_id = $USR OR EXISTS (SELECT 1 FROM inscripciones i WHERE i.materia_id = m.id AND i.usuario_id = $USR))`;
+// Una materia es "visible" para un usuario si es su dueño (admin), si es
+// el profesor asignado, o si esta inscrito en ella (estudiante).
+const VISIBLE_MATERIA = `(m.usuario_id = $USR OR m.profesor_id = $USR OR EXISTS (SELECT 1 FROM inscripciones i WHERE i.materia_id = m.id AND i.usuario_id = $USR))`;
 
-async function materiaVisible(materiaId, req) {
-  const usuarioId = await usuarioEfectivo(req);
+async function materiaVisible(materiaId, usuarioId) {
   const r = await pool.query(
-    `SELECT 1 FROM materias m WHERE m.id = $1 AND ${VISIBLE_MATERIA.replace(/\$ADMIN/g, '$2').replace(/\$USR/g, '$3')}`,
-    [materiaId, req.usuario.rol === 'admin', usuarioId]
+    `SELECT 1 FROM materias m WHERE m.id = $1 AND ${VISIBLE_MATERIA.replace(/\$USR/g, '$2')}`,
+    [materiaId, usuarioId]
   );
   return r.rows.length > 0;
 }
@@ -162,7 +114,7 @@ async function entregaBloqueada(req, tareaId) {
 
 app.get('/api/health', (req, res) => res.json({ status: 'ok' }));
 
-app.post('/api/auth/login', loginLimiter, async (req, res) => {
+app.post('/api/auth/login', async (req, res) => {
   const { correo, password } = req.body;
   if (!correo || !password) return res.status(400).json({ error: 'Correo y contraseña son obligatorios' });
   try {
@@ -185,20 +137,25 @@ app.use('/api/anuncios', requireAuth);
 app.use('/api/usuarios', requireAuth);
 app.use('/api/comentarios', requireAuth);
 
+const ROLES_GESTIONABLES = ['estudiante', 'profesor'];
+
 app.get('/api/usuarios', requireAdmin, async (req, res) => {
+  const rol = ROLES_GESTIONABLES.includes(req.query.rol) ? req.query.rol : 'estudiante';
   try {
     const result = await pool.query(
-      "SELECT id, nombre, correo, rol, fecha_creacion FROM usuarios WHERE rol = 'estudiante' ORDER BY id DESC"
+      'SELECT id, nombre, correo, rol, fecha_creacion FROM usuarios WHERE rol = $1 ORDER BY id DESC',
+      [rol]
     );
     res.json(result.rows);
   } catch (err) {
     console.error(err);
-    res.status(500).json({ error: 'Error al obtener los estudiantes' });
+    res.status(500).json({ error: 'Error al obtener los usuarios' });
   }
 });
 
 app.post('/api/usuarios', requireAdmin, async (req, res) => {
   const { nombre, correo, password } = req.body;
+  const rol = ROLES_GESTIONABLES.includes(req.body.rol) ? req.body.rol : 'estudiante';
   if (!nombre || !correo || !password) return res.status(400).json({ error: 'Nombre, correo y contraseña son obligatorios' });
   if (password.length < 4) return res.status(400).json({ error: 'La contraseña debe tener al menos 4 caracteres' });
   try {
@@ -206,74 +163,27 @@ app.post('/api/usuarios', requireAdmin, async (req, res) => {
     if (existe.rows.length > 0) return res.status(400).json({ error: 'Ya existe una cuenta con ese correo' });
     const hash = bcrypt.hashSync(password, 10);
     const result = await pool.query(
-      "INSERT INTO usuarios (nombre, correo, password_hash, rol) VALUES ($1, $2, $3, 'estudiante') RETURNING id, nombre, correo, rol, fecha_creacion",
-      [nombre.trim(), correo.trim().toLowerCase(), hash]
+      'INSERT INTO usuarios (nombre, correo, password_hash, rol) VALUES ($1, $2, $3, $4) RETURNING id, nombre, correo, rol, fecha_creacion',
+      [nombre.trim(), correo.trim().toLowerCase(), hash, rol]
     );
     res.status(201).json(result.rows[0]);
   } catch (err) {
     console.error(err);
-    res.status(500).json({ error: 'Error al crear el estudiante' });
+    res.status(500).json({ error: 'Error al crear la cuenta' });
   }
 });
 
 app.delete('/api/usuarios/:id', requireAdmin, async (req, res) => {
   try {
     const result = await pool.query(
-      "DELETE FROM usuarios WHERE id = $1 AND rol = 'estudiante' RETURNING id",
-      [req.params.id]
+      'DELETE FROM usuarios WHERE id = $1 AND rol = ANY($2) RETURNING id',
+      [req.params.id, ROLES_GESTIONABLES]
     );
-    if (result.rows.length === 0) return res.status(404).json({ error: 'Estudiante no encontrado' });
-    res.json({ message: 'Estudiante eliminado' });
+    if (result.rows.length === 0) return res.status(404).json({ error: 'Cuenta no encontrada' });
+    res.json({ message: 'Cuenta eliminada' });
   } catch (err) {
     console.error(err);
-    res.status(500).json({ error: 'Error al eliminar el estudiante' });
-  }
-});
-
-// Solo el admin puede crear/eliminar cuentas de profesor. Un profesor solo puede
-// crear cuentas de estudiante (ver /api/materias/:id/estudiantes/lote).
-app.get('/api/usuarios/profesores', requireAdmin, async (req, res) => {
-  try {
-    const result = await pool.query(
-      "SELECT id, nombre, correo, fecha_creacion FROM usuarios WHERE rol = 'profesor' ORDER BY id DESC"
-    );
-    res.json(result.rows);
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: 'Error al obtener los profesores' });
-  }
-});
-
-app.post('/api/usuarios/profesores', requireAdmin, async (req, res) => {
-  const { nombre, correo, password } = req.body;
-  if (!nombre || !correo || !password) return res.status(400).json({ error: 'Nombre, correo y contraseña son obligatorios' });
-  if (password.length < 4) return res.status(400).json({ error: 'La contraseña debe tener al menos 4 caracteres' });
-  try {
-    const existe = await pool.query('SELECT id FROM usuarios WHERE correo = $1', [correo.trim().toLowerCase()]);
-    if (existe.rows.length > 0) return res.status(400).json({ error: 'Ya existe una cuenta con ese correo' });
-    const hash = bcrypt.hashSync(password, 10);
-    const result = await pool.query(
-      "INSERT INTO usuarios (nombre, correo, password_hash, rol) VALUES ($1, $2, $3, 'profesor') RETURNING id, nombre, correo, rol, fecha_creacion",
-      [nombre.trim(), correo.trim().toLowerCase(), hash]
-    );
-    res.status(201).json(result.rows[0]);
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: 'Error al crear el profesor' });
-  }
-});
-
-app.delete('/api/usuarios/profesores/:id', requireAdmin, async (req, res) => {
-  try {
-    const result = await pool.query(
-      "DELETE FROM usuarios WHERE id = $1 AND rol = 'profesor' RETURNING id",
-      [req.params.id]
-    );
-    if (result.rows.length === 0) return res.status(404).json({ error: 'Profesor no encontrado' });
-    res.json({ message: 'Profesor eliminado' });
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: 'Error al eliminar el profesor' });
+    res.status(500).json({ error: 'Error al eliminar la cuenta' });
   }
 });
 
@@ -282,34 +192,19 @@ app.get('/api/materias', async (req, res) => {
     const usuarioId = await usuarioEfectivo(req);
     const result = await pool.query(`
       SELECT
-        m.id, m.nombre, m.profesor, m.orden, m.fecha_creacion,
-        (m.usuario_id = $1) AS es_dueno,
-        (SELECT nombre FROM usuarios WHERE id = m.usuario_id) AS dueno_nombre,
+        m.id, m.nombre, m.orden, m.fecha_creacion, m.profesor_id,
+        COALESCE(p.nombre, m.profesor) AS profesor,
+        (m.usuario_id = $1 OR m.profesor_id = $1) AS es_dueno,
         COUNT(t.id)::int AS total,
         COUNT(t.id) FILTER (WHERE t.completada)::int AS completadas,
-        COUNT(t.id) FILTER (WHERE NOT t.completada)::int AS pendientes,
-        (
-          SELECT COUNT(*)::int FROM (
-            SELECT c.fecha_creacion AS f FROM comentarios c
-              JOIN tareas tc ON tc.id = c.tarea_id
-              WHERE tc.materia_id = m.id AND c.autor_rol = 'estudiante' AND c.fecha_creacion > NOW() - INTERVAL '3 days'
-            UNION ALL
-            SELECT a.fecha_subida AS f FROM archivos_tarea a
-              JOIN tareas ta ON ta.id = a.tarea_id
-              WHERE ta.materia_id = m.id AND a.fecha_subida > NOW() - INTERVAL '3 days'
-          ) reciente
-        ) AS actividad_reciente,
-        (
-          SELECT ROUND(AVG(n.nota)::numeric, 2) FROM notas n
-          JOIN tareas tn ON tn.id = n.tarea_id
-          WHERE tn.materia_id = m.id AND n.usuario_id = $1 AND n.nota IS NOT NULL
-        ) AS promedio_notas
+        COUNT(t.id) FILTER (WHERE NOT t.completada)::int AS pendientes
       FROM materias m
+      LEFT JOIN usuarios p ON p.id = m.profesor_id
       LEFT JOIN tareas t ON t.materia_id = m.id
-      WHERE ${VISIBLE_MATERIA.replace(/\$ADMIN/g, '$2').replace(/\$USR/g, '$1')}
-      GROUP BY m.id
+      WHERE ${VISIBLE_MATERIA.replace(/\$USR/g, '$1')}
+      GROUP BY m.id, p.nombre
       ORDER BY m.orden NULLS LAST, m.id
-    `, [usuarioId, req.usuario.rol === 'admin']);
+    `, [usuarioId]);
     res.json(result.rows);
   } catch (err) {
     console.error(err);
@@ -317,15 +212,19 @@ app.get('/api/materias', async (req, res) => {
   }
 });
 
-app.post('/api/materias', requireDocente, async (req, res) => {
-  const { nombre, profesor } = req.body;
+app.post('/api/materias', requireAdmin, async (req, res) => {
+  const { nombre, profesor_id } = req.body;
   if (!nombre) return res.status(400).json({ error: 'El nombre de la materia es obligatorio' });
+  if (!profesor_id) return res.status(400).json({ error: 'Debes asignar un profesor a la materia' });
   try {
-    const usuarioId = await usuarioEfectivo(req);
+    const profesor = await pool.query("SELECT id FROM usuarios WHERE id = $1 AND rol = 'profesor'", [profesor_id]);
+    if (profesor.rows.length === 0) return res.status(400).json({ error: 'El profesor seleccionado no es válido' });
+
+    const usuarioId = req.usuario.id;
     const maxOrden = await pool.query('SELECT COALESCE(MAX(orden), 0) AS max FROM materias WHERE usuario_id = $1', [usuarioId]);
     const result = await pool.query(
-      'INSERT INTO materias (usuario_id, nombre, profesor, orden) VALUES ($1, $2, $3, $4) RETURNING *',
-      [usuarioId, nombre, profesor || null, maxOrden.rows[0].max + 1]
+      'INSERT INTO materias (usuario_id, profesor_id, nombre, orden) VALUES ($1, $2, $3, $4) RETURNING *',
+      [usuarioId, profesor_id, nombre, maxOrden.rows[0].max + 1]
     );
     res.status(201).json(result.rows[0]);
   } catch (err) {
@@ -334,12 +233,13 @@ app.post('/api/materias', requireDocente, async (req, res) => {
   }
 });
 
-app.put('/api/materias/reordenar', requireDocente, async (req, res) => {
+app.put('/api/materias/reordenar', requireAdmin, async (req, res) => {
   const { orden } = req.body;
   if (!Array.isArray(orden) || orden.length === 0) return res.status(400).json({ error: 'Se requiere un arreglo de ids' });
   try {
+    const usuarioId = await usuarioEfectivo(req);
     await Promise.all(orden.map(async (id, i) => {
-      if (await materiaVisible(id, req)) {
+      if (await materiaVisible(id, usuarioId)) {
         await pool.query('UPDATE materias SET orden = $1 WHERE id = $2', [i + 1, id]);
       }
     }));
@@ -350,13 +250,17 @@ app.put('/api/materias/reordenar', requireDocente, async (req, res) => {
   }
 });
 
-app.put('/api/materias/:id', requireDocente, async (req, res) => {
-  const { nombre, profesor } = req.body;
+app.put('/api/materias/:id', requireAdmin, async (req, res) => {
+  const { nombre, profesor_id } = req.body;
   if (!nombre) return res.status(400).json({ error: 'El nombre de la materia es obligatorio' });
+  if (!profesor_id) return res.status(400).json({ error: 'Debes asignar un profesor a la materia' });
   try {
+    const profesor = await pool.query("SELECT id FROM usuarios WHERE id = $1 AND rol = 'profesor'", [profesor_id]);
+    if (profesor.rows.length === 0) return res.status(400).json({ error: 'El profesor seleccionado no es válido' });
+
     const result = await pool.query(
-      'UPDATE materias SET nombre = $1, profesor = $2 WHERE id = $3 AND (usuario_id = $4 OR $5) RETURNING *',
-      [nombre, profesor || null, req.params.id, await usuarioEfectivo(req), req.usuario.rol === 'admin']
+      'UPDATE materias SET nombre = $1, profesor_id = $2 WHERE id = $3 AND usuario_id = $4 RETURNING *',
+      [nombre, profesor_id, req.params.id, req.usuario.id]
     );
     if (result.rows.length === 0) return res.status(404).json({ error: 'Materia no encontrada' });
     res.json(result.rows[0]);
@@ -366,11 +270,11 @@ app.put('/api/materias/:id', requireDocente, async (req, res) => {
   }
 });
 
-app.delete('/api/materias/:id', requireDocente, async (req, res) => {
+app.delete('/api/materias/:id', requireAdmin, async (req, res) => {
   try {
     const result = await pool.query(
-      'DELETE FROM materias WHERE id = $1 AND (usuario_id = $2 OR $3) RETURNING *',
-      [req.params.id, await usuarioEfectivo(req), req.usuario.rol === 'admin']
+      'DELETE FROM materias WHERE id = $1 AND usuario_id = $2 RETURNING *',
+      [req.params.id, req.usuario.id]
     );
     if (result.rows.length === 0) return res.status(404).json({ error: 'Materia no encontrada' });
     res.json({ message: 'Materia eliminada' });
@@ -380,9 +284,11 @@ app.delete('/api/materias/:id', requireDocente, async (req, res) => {
   }
 });
 
-app.get('/api/materias/:id/estudiantes', requireDocente, async (req, res) => {
+app.get('/api/materias/:id/estudiantes', async (req, res) => {
+  if (!(await materiaDocente(req.params.id, req.usuario))) {
+    return res.status(403).json({ error: 'No tienes permiso para ver los estudiantes de esta materia' });
+  }
   try {
-    if (!(await materiaVisible(req.params.id, req))) return res.status(404).json({ error: 'Materia no encontrada' });
     const result = await pool.query(
       `SELECT u.id, u.nombre, u.correo, i.fecha_inscripcion
        FROM inscripciones i JOIN usuarios u ON u.id = i.usuario_id
@@ -397,11 +303,12 @@ app.get('/api/materias/:id/estudiantes', requireDocente, async (req, res) => {
   }
 });
 
-app.post('/api/materias/:id/estudiantes', requireDocente, async (req, res) => {
+app.post('/api/materias/:id/estudiantes', requireAdmin, async (req, res) => {
   const { usuario_id } = req.body;
   if (!usuario_id) return res.status(400).json({ error: 'Debes indicar un estudiante' });
   try {
-    if (!(await materiaVisible(req.params.id, req))) return res.status(404).json({ error: 'Materia no encontrada' });
+    const materia = await pool.query('SELECT id FROM materias WHERE id = $1', [req.params.id]);
+    if (materia.rows.length === 0) return res.status(404).json({ error: 'Materia no encontrada' });
     const estudiante = await pool.query("SELECT id, nombre, correo FROM usuarios WHERE id = $1 AND rol = 'estudiante'", [usuario_id]);
     if (estudiante.rows.length === 0) return res.status(404).json({ error: 'Estudiante no encontrado' });
     await pool.query(
@@ -415,9 +322,8 @@ app.post('/api/materias/:id/estudiantes', requireDocente, async (req, res) => {
   }
 });
 
-app.delete('/api/materias/:id/estudiantes/:usuarioId', requireDocente, async (req, res) => {
+app.delete('/api/materias/:id/estudiantes/:usuarioId', requireAdmin, async (req, res) => {
   try {
-    if (!(await materiaVisible(req.params.id, req))) return res.status(404).json({ error: 'Materia no encontrada' });
     const result = await pool.query(
       'DELETE FROM inscripciones WHERE materia_id = $1 AND usuario_id = $2 RETURNING id',
       [req.params.id, req.params.usuarioId]
@@ -430,108 +336,9 @@ app.delete('/api/materias/:id/estudiantes/:usuarioId', requireDocente, async (re
   }
 });
 
-// Agrega varios estudiantes de una vez a una materia: crea la cuenta si el correo
-// no existe todavía (con una contraseña temporal compartida) y los inscribe.
-app.post('/api/materias/:id/estudiantes/lote', requireDocente, async (req, res) => {
-  const { estudiantes, password } = req.body;
-  if (!Array.isArray(estudiantes) || estudiantes.length === 0) {
-    return res.status(400).json({ error: 'Debes indicar al menos un estudiante' });
-  }
-  if (!password || password.length < 4) {
-    return res.status(400).json({ error: 'La contraseña temporal debe tener al menos 4 caracteres' });
-  }
-  try {
-    if (!(await materiaVisible(req.params.id, req))) return res.status(404).json({ error: 'Materia no encontrada' });
-
-    const hash = bcrypt.hashSync(password, 10);
-    let creados = 0;
-    let existentes = 0;
-    let inscritos = 0;
-
-    for (const est of estudiantes) {
-      const nombre = (est.nombre || '').trim();
-      const correo = (est.correo || '').trim().toLowerCase();
-      if (!nombre || !correo) continue;
-
-      let usuarioId;
-      const existe = await pool.query('SELECT id FROM usuarios WHERE correo = $1', [correo]);
-      if (existe.rows.length > 0) {
-        usuarioId = existe.rows[0].id;
-        existentes++;
-      } else {
-        const creado = await pool.query(
-          "INSERT INTO usuarios (nombre, correo, password_hash, rol) VALUES ($1, $2, $3, 'estudiante') RETURNING id",
-          [nombre, correo, hash]
-        );
-        usuarioId = creado.rows[0].id;
-        creados++;
-      }
-
-      const insc = await pool.query(
-        'INSERT INTO inscripciones (materia_id, usuario_id) VALUES ($1, $2) ON CONFLICT (materia_id, usuario_id) DO NOTHING RETURNING id',
-        [req.params.id, usuarioId]
-      );
-      if (insc.rows.length > 0) inscritos++;
-    }
-
-    res.status(201).json({ creados, existentes, inscritos });
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: 'Error al agregar estudiantes en lote' });
-  }
-});
-
-// Libro de calificaciones: matriz de estudiantes x tareas con la nota de cada uno,
-// mas el promedio individual, para toda la materia (no solo una tarea a la vez).
-app.get('/api/materias/:id/libro-notas', requireDocente, async (req, res) => {
-  try {
-    if (!(await materiaVisible(req.params.id, req))) return res.status(404).json({ error: 'Materia no encontrada' });
-
-    const tareasResult = await pool.query(
-      'SELECT id, titulo FROM tareas WHERE materia_id = $1 ORDER BY id',
-      [req.params.id]
-    );
-
-    const estudiantesResult = await pool.query(
-      `SELECT u.id, u.nombre, u.correo
-       FROM inscripciones i JOIN usuarios u ON u.id = i.usuario_id
-       WHERE i.materia_id = $1
-       ORDER BY u.nombre`,
-      [req.params.id]
-    );
-
-    const notasResult = await pool.query(
-      `SELECT n.usuario_id, n.tarea_id, n.nota
-       FROM notas n JOIN tareas t ON t.id = n.tarea_id
-       WHERE t.materia_id = $1`,
-      [req.params.id]
-    );
-
-    const notasPorEstudiante = {};
-    notasResult.rows.forEach((n) => {
-      if (!notasPorEstudiante[n.usuario_id]) notasPorEstudiante[n.usuario_id] = {};
-      notasPorEstudiante[n.usuario_id][n.tarea_id] = n.nota === null ? null : Number(n.nota);
-    });
-
-    const estudiantes = estudiantesResult.rows.map((e) => {
-      const notas = notasPorEstudiante[e.id] || {};
-      const valores = Object.values(notas).filter((v) => v !== null && v !== undefined);
-      const promedio = valores.length
-        ? Number((valores.reduce((a, b) => a + b, 0) / valores.length).toFixed(2))
-        : null;
-      return { ...e, notas, promedio };
-    });
-
-    res.json({ tareas: tareasResult.rows, estudiantes });
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: 'Error al obtener el libro de calificaciones' });
-  }
-});
-
 app.get('/api/materias/:id/anuncios', async (req, res) => {
   try {
-    if (!(await materiaVisible(req.params.id, req))) return res.status(404).json({ error: 'Materia no encontrada' });
+    if (!(await materiaVisible(req.params.id, await usuarioEfectivo(req)))) return res.status(404).json({ error: 'Materia no encontrada' });
     const result = await pool.query('SELECT * FROM anuncios WHERE materia_id = $1 ORDER BY id DESC', [req.params.id]);
     res.json(result.rows);
   } catch (err) {
@@ -540,11 +347,13 @@ app.get('/api/materias/:id/anuncios', async (req, res) => {
   }
 });
 
-app.post('/api/materias/:id/anuncios', requireDocente, async (req, res) => {
+app.post('/api/materias/:id/anuncios', requireAdminOProfesor, async (req, res) => {
   const { contenido } = req.body;
   if (!contenido || !contenido.trim()) return res.status(400).json({ error: 'El contenido del anuncio es obligatorio' });
   try {
-    if (!(await materiaVisible(req.params.id, req))) return res.status(404).json({ error: 'Materia no encontrada' });
+    if (!(await materiaDocente(req.params.id, req.usuario))) {
+      return res.status(403).json({ error: 'No tienes permiso para publicar anuncios en esta materia' });
+    }
     const result = await pool.query(
       'INSERT INTO anuncios (materia_id, contenido) VALUES ($1, $2) RETURNING *',
       [req.params.id, contenido.trim()]
@@ -556,15 +365,14 @@ app.post('/api/materias/:id/anuncios', requireDocente, async (req, res) => {
   }
 });
 
-app.delete('/api/anuncios/:id', requireDocente, async (req, res) => {
+app.delete('/api/anuncios/:id', requireAdminOProfesor, async (req, res) => {
   try {
-    const result = await pool.query(
-      `DELETE FROM anuncios a USING materias m
-       WHERE a.id = $1 AND a.materia_id = m.id AND (m.usuario_id = $2 OR $3)
-       RETURNING a.id`,
-      [req.params.id, await usuarioEfectivo(req), req.usuario.rol === 'admin']
-    );
-    if (result.rows.length === 0) return res.status(404).json({ error: 'Anuncio no encontrado' });
+    const anuncio = await pool.query('SELECT materia_id FROM anuncios WHERE id = $1', [req.params.id]);
+    if (anuncio.rows.length === 0) return res.status(404).json({ error: 'Anuncio no encontrado' });
+    if (!(await materiaDocente(anuncio.rows[0].materia_id, req.usuario))) {
+      return res.status(403).json({ error: 'No tienes permiso para eliminar este anuncio' });
+    }
+    await pool.query('DELETE FROM anuncios WHERE id = $1', [req.params.id]);
     res.json({ message: 'Anuncio eliminado' });
   } catch (err) {
     console.error(err);
@@ -575,14 +383,14 @@ app.delete('/api/anuncios/:id', requireDocente, async (req, res) => {
 app.get('/api/tareas', async (req, res) => {
   try {
     const { materia_id } = req.query;
-    const params = [await usuarioEfectivo(req), req.usuario.rol === 'admin'];
+    const params = [await usuarioEfectivo(req)];
     let query = `
       SELECT t.*, m.nombre AS materia_nombre,
         (SELECT COUNT(*) FROM archivos_tarea a WHERE a.tarea_id = t.id)::int AS num_archivos,
         (SELECT nota FROM notas n WHERE n.tarea_id = t.id AND n.usuario_id = $1) AS mi_nota
       FROM tareas t
       JOIN materias m ON m.id = t.materia_id
-      WHERE ${VISIBLE_MATERIA.replace(/\$ADMIN/g, '$2').replace(/\$USR/g, '$1')}
+      WHERE ${VISIBLE_MATERIA.replace(/\$USR/g, '$1')}
     `;
     if (materia_id) {
       params.push(materia_id);
@@ -600,8 +408,8 @@ app.get('/api/tareas', async (req, res) => {
 app.get('/api/tareas/estadisticas', async (req, res) => {
   try {
     const { materia_id } = req.query;
-    const params = [req.usuario.rol === 'admin', await usuarioEfectivo(req)];
-    let filtro = `WHERE ${VISIBLE_MATERIA.replace(/\$ADMIN/g, '$1').replace(/\$USR/g, '$2')}`;
+    const params = [await usuarioEfectivo(req)];
+    let filtro = `WHERE ${VISIBLE_MATERIA.replace(/\$USR/g, '$1')}`;
     if (materia_id) {
       params.push(materia_id);
       filtro += ` AND t.materia_id = $${params.length}`;
@@ -631,8 +439,8 @@ app.get('/api/tareas/:id', async (req, res) => {
   try {
     const usuarioId = await usuarioEfectivo(req);
     const result = await pool.query(
-      `SELECT t.* FROM tareas t JOIN materias m ON m.id = t.materia_id WHERE t.id = $1 AND ${VISIBLE_MATERIA.replace(/\$ADMIN/g, '$3').replace(/\$USR/g, '$2')}`,
-      [req.params.id, usuarioId, req.usuario.rol === 'admin']
+      `SELECT t.* FROM tareas t JOIN materias m ON m.id = t.materia_id WHERE t.id = $1 AND ${VISIBLE_MATERIA.replace(/\$USR/g, '$2')}`,
+      [req.params.id, usuarioId]
     );
     if (result.rows.length === 0) return res.status(404).json({ error: 'Tarea no encontrada' });
     const miNota = await pool.query('SELECT nota, comentario FROM notas WHERE tarea_id = $1 AND usuario_id = $2', [req.params.id, usuarioId]);
@@ -647,17 +455,18 @@ app.get('/api/tareas/:id', async (req, res) => {
   }
 });
 
-app.post('/api/tareas', requireDocente, async (req, res) => {
+app.post('/api/tareas', requireAdminOProfesor, async (req, res) => {
   const { titulo, descripcion, prioridad, fecha_limite, materia_id } = req.body;
   if (!titulo) return res.status(400).json({ error: 'El título es obligatorio' });
+  if (!materia_id) return res.status(400).json({ error: 'Debes indicar la materia de la tarea' });
   const prioridadFinal = PRIORIDADES_VALIDAS.includes(prioridad) ? prioridad : 'media';
   try {
-    if (materia_id) {
-      if (!(await materiaVisible(materia_id, req))) return res.status(403).json({ error: 'Materia no válida' });
+    if (!(await materiaDocente(materia_id, req.usuario))) {
+      return res.status(403).json({ error: 'No tienes permiso para crear tareas en esta materia' });
     }
     const result = await pool.query(
       'INSERT INTO tareas (titulo, descripcion, prioridad, fecha_limite, materia_id) VALUES ($1, $2, $3, $4, $5) RETURNING *',
-      [titulo, descripcion || null, prioridadFinal, fecha_limite || null, materia_id || null]
+      [titulo, descripcion || null, prioridadFinal, fecha_limite || null, materia_id]
     );
     res.status(201).json(result.rows[0]);
   } catch (err) {
@@ -666,20 +475,17 @@ app.post('/api/tareas', requireDocente, async (req, res) => {
   }
 });
 
-app.put('/api/tareas/:id', requireDocente, async (req, res) => {
+app.put('/api/tareas/:id', requireAdminOProfesor, async (req, res) => {
   const { titulo, descripcion, completada, prioridad, fecha_limite, materia_id } = req.body;
   const prioridadFinal = PRIORIDADES_VALIDAS.includes(prioridad) ? prioridad : 'media';
   try {
-    const usuarioId = await usuarioEfectivo(req);
-    const propia = await pool.query(
-      `SELECT t.id FROM tareas t JOIN materias m ON m.id = t.materia_id WHERE t.id = $1 AND ${VISIBLE_MATERIA.replace(/\$ADMIN/g, '$3').replace(/\$USR/g, '$2')}`,
-      [req.params.id, usuarioId, req.usuario.rol === 'admin']
-    );
-    if (propia.rows.length === 0) return res.status(404).json({ error: 'Tarea no encontrada' });
-    const motivoBloqueo = await entregaBloqueada(req, req.params.id);
-    if (motivoBloqueo) return res.status(403).json({ error: motivoBloqueo });
-    if (materia_id) {
-      if (!(await materiaVisible(materia_id, req))) return res.status(403).json({ error: 'Materia no válida' });
+    const existente = await pool.query('SELECT materia_id FROM tareas WHERE id = $1', [req.params.id]);
+    if (existente.rows.length === 0) return res.status(404).json({ error: 'Tarea no encontrada' });
+    if (!(await materiaDocente(existente.rows[0].materia_id, req.usuario))) {
+      return res.status(403).json({ error: 'No tienes permiso para modificar esta tarea' });
+    }
+    if (materia_id && !(await materiaDocente(materia_id, req.usuario))) {
+      return res.status(403).json({ error: 'Materia no válida' });
     }
     const result = await pool.query(
       'UPDATE tareas SET titulo = $1, descripcion = $2, completada = $3, prioridad = $4, fecha_limite = $5, materia_id = COALESCE($6, materia_id) WHERE id = $7 RETURNING *',
@@ -692,11 +498,11 @@ app.put('/api/tareas/:id', requireDocente, async (req, res) => {
   }
 });
 
-app.delete('/api/tareas/completadas', requireDocente, async (req, res) => {
+app.delete('/api/tareas/completadas', requireAdminOProfesor, async (req, res) => {
   try {
     const { materia_id } = req.query;
-    const params = [req.usuario.rol === 'admin', await usuarioEfectivo(req)];
-    let filtro = `USING materias m WHERE tareas.materia_id = m.id AND ${VISIBLE_MATERIA.replace(/\$ADMIN/g, '$1').replace(/\$USR/g, '$2')} AND tareas.completada = true`;
+    const params = [await usuarioEfectivo(req)];
+    let filtro = `USING materias m WHERE tareas.materia_id = m.id AND ${VISIBLE_MATERIA.replace(/\$USR/g, '$1')} AND tareas.completada = true`;
     if (materia_id) {
       params.push(materia_id);
       filtro += ` AND tareas.materia_id = $${params.length}`;
@@ -709,26 +515,18 @@ app.delete('/api/tareas/completadas', requireDocente, async (req, res) => {
   }
 });
 
-app.delete('/api/tareas/:id', requireDocente, async (req, res) => {
+app.delete('/api/tareas/:id', requireAdminOProfesor, async (req, res) => {
   try {
-    const usuarioId = await usuarioEfectivo(req);
-    const esAdmin = req.usuario.rol === 'admin';
-    const motivoBloqueo = await entregaBloqueada(req, req.params.id);
-    if (motivoBloqueo) return res.status(403).json({ error: motivoBloqueo });
+    const tarea = await pool.query('SELECT materia_id FROM tareas WHERE id = $1', [req.params.id]);
+    if (tarea.rows.length === 0) return res.status(404).json({ error: 'Tarea no encontrada' });
+    if (!(await materiaDocente(tarea.rows[0].materia_id, req.usuario))) {
+      return res.status(403).json({ error: 'No tienes permiso para eliminar esta tarea' });
+    }
     const archivosPrevios = await pool.query(
-      `SELECT a.ruta FROM archivos_tarea a
-       JOIN tareas t ON t.id = a.tarea_id
-       JOIN materias m ON m.id = t.materia_id
-       WHERE a.tarea_id = $1 AND ${VISIBLE_MATERIA.replace(/\$ADMIN/g, '$3').replace(/\$USR/g, '$2')}`,
-      [req.params.id, usuarioId, esAdmin]
+      'SELECT ruta FROM archivos_tarea WHERE tarea_id = $1',
+      [req.params.id]
     );
-    const result = await pool.query(
-      `DELETE FROM tareas USING materias m
-       WHERE tareas.id = $1 AND tareas.materia_id = m.id AND ${VISIBLE_MATERIA.replace(/\$ADMIN/g, '$3').replace(/\$USR/g, '$2')}
-       RETURNING tareas.*`,
-      [req.params.id, usuarioId, esAdmin]
-    );
-    if (result.rows.length === 0) return res.status(404).json({ error: 'Tarea no encontrada' });
+    await pool.query('DELETE FROM tareas WHERE id = $1', [req.params.id]);
     archivosPrevios.rows.forEach(a => fs.unlink(path.join(UPLOADS_DIR, a.ruta), () => {}));
     res.json({ message: 'Tarea eliminada' });
   } catch (err) {
@@ -740,8 +538,8 @@ app.delete('/api/tareas/:id', requireDocente, async (req, res) => {
 app.get('/api/tareas/:id/comentarios', async (req, res) => {
   try {
     const tarea = await pool.query(
-      `SELECT t.id FROM tareas t JOIN materias m ON m.id = t.materia_id WHERE t.id = $1 AND ${VISIBLE_MATERIA.replace(/\$ADMIN/g, '$3').replace(/\$USR/g, '$2')}`,
-      [req.params.id, await usuarioEfectivo(req), req.usuario.rol === 'admin']
+      `SELECT t.id FROM tareas t JOIN materias m ON m.id = t.materia_id WHERE t.id = $1 AND (m.usuario_id = $2 OR m.profesor_id = $2 OR EXISTS (SELECT 1 FROM inscripciones i WHERE i.materia_id = m.id AND i.usuario_id = $2))`,
+      [req.params.id, await usuarioEfectivo(req)]
     );
     if (tarea.rows.length === 0) return res.status(404).json({ error: 'Tarea no encontrada' });
     const result = await pool.query('SELECT * FROM comentarios WHERE tarea_id = $1 ORDER BY id ASC', [req.params.id]);
@@ -757,8 +555,8 @@ app.post('/api/tareas/:id/comentarios', async (req, res) => {
   if (!contenido || !contenido.trim()) return res.status(400).json({ error: 'El comentario no puede estar vacío' });
   try {
     const tarea = await pool.query(
-      `SELECT t.id FROM tareas t JOIN materias m ON m.id = t.materia_id WHERE t.id = $1 AND ${VISIBLE_MATERIA.replace(/\$ADMIN/g, '$3').replace(/\$USR/g, '$2')}`,
-      [req.params.id, await usuarioEfectivo(req), req.usuario.rol === 'admin']
+      `SELECT t.id FROM tareas t JOIN materias m ON m.id = t.materia_id WHERE t.id = $1 AND (m.usuario_id = $2 OR m.profesor_id = $2 OR EXISTS (SELECT 1 FROM inscripciones i WHERE i.materia_id = m.id AND i.usuario_id = $2))`,
+      [req.params.id, await usuarioEfectivo(req)]
     );
     if (tarea.rows.length === 0) return res.status(404).json({ error: 'Tarea no encontrada' });
     const result = await pool.query(
@@ -776,9 +574,9 @@ app.delete('/api/comentarios/:id', async (req, res) => {
   try {
     const result = await pool.query(
       `DELETE FROM comentarios c USING tareas t, materias m
-       WHERE c.id = $1 AND c.tarea_id = t.id AND t.materia_id = m.id AND ${VISIBLE_MATERIA.replace(/\$ADMIN/g, '$3').replace(/\$USR/g, '$2')}
+       WHERE c.id = $1 AND c.tarea_id = t.id AND t.materia_id = m.id AND ${VISIBLE_MATERIA.replace(/\$USR/g, '$2')}
        RETURNING c.id`,
-      [req.params.id, await usuarioEfectivo(req), req.usuario.rol === 'admin']
+      [req.params.id, await usuarioEfectivo(req)]
     );
     if (result.rows.length === 0) return res.status(404).json({ error: 'Comentario no encontrado' });
     res.json({ message: 'Comentario eliminado' });
@@ -806,8 +604,8 @@ async function tareaConArchivos(tareaId) {
 app.get('/api/tareas/:id/archivos', async (req, res) => {
   try {
     const tarea = await pool.query(
-      `SELECT t.id FROM tareas t JOIN materias m ON m.id = t.materia_id WHERE t.id = $1 AND ${VISIBLE_MATERIA.replace(/\$ADMIN/g, '$3').replace(/\$USR/g, '$2')}`,
-      [req.params.id, await usuarioEfectivo(req), req.usuario.rol === 'admin']
+      `SELECT t.id FROM tareas t JOIN materias m ON m.id = t.materia_id WHERE t.id = $1 AND (m.usuario_id = $2 OR m.profesor_id = $2 OR EXISTS (SELECT 1 FROM inscripciones i WHERE i.materia_id = m.id AND i.usuario_id = $2))`,
+      [req.params.id, await usuarioEfectivo(req)]
     );
     if (tarea.rows.length === 0) return res.status(404).json({ error: 'Tarea no encontrada' });
     res.json(await archivosDeTarea(req.params.id));
@@ -822,8 +620,8 @@ app.post('/api/tareas/:id/archivo', upload.single('archivo'), async (req, res) =
   try {
     const usuarioId = await usuarioEfectivo(req);
     const tarea = await pool.query(
-      `SELECT t.id FROM tareas t JOIN materias m ON m.id = t.materia_id WHERE t.id = $1 AND ${VISIBLE_MATERIA.replace(/\$ADMIN/g, '$3').replace(/\$USR/g, '$2')}`,
-      [req.params.id, usuarioId, req.usuario.rol === 'admin']
+      `SELECT t.id FROM tareas t JOIN materias m ON m.id = t.materia_id WHERE t.id = $1 AND (m.usuario_id = $2 OR m.profesor_id = $2 OR EXISTS (SELECT 1 FROM inscripciones i WHERE i.materia_id = m.id AND i.usuario_id = $2))`,
+      [req.params.id, usuarioId]
     );
     if (tarea.rows.length === 0) {
       fs.unlink(path.join(UPLOADS_DIR, req.file.filename), () => {});
@@ -852,8 +650,8 @@ app.delete('/api/tareas/:id/archivo/:archivoId', async (req, res) => {
   try {
     const usuarioId = await usuarioEfectivo(req);
     const tarea = await pool.query(
-      `SELECT t.id FROM tareas t JOIN materias m ON m.id = t.materia_id WHERE t.id = $1 AND ${VISIBLE_MATERIA.replace(/\$ADMIN/g, '$3').replace(/\$USR/g, '$2')}`,
-      [req.params.id, usuarioId, req.usuario.rol === 'admin']
+      `SELECT t.id FROM tareas t JOIN materias m ON m.id = t.materia_id WHERE t.id = $1 AND (m.usuario_id = $2 OR m.profesor_id = $2 OR EXISTS (SELECT 1 FROM inscripciones i WHERE i.materia_id = m.id AND i.usuario_id = $2))`,
+      [req.params.id, usuarioId]
     );
     if (tarea.rows.length === 0) return res.status(404).json({ error: 'Tarea no encontrada' });
     const motivoBloqueo = await entregaBloqueada(req, req.params.id);
@@ -878,14 +676,13 @@ app.delete('/api/tareas/:id/archivo/:archivoId', async (req, res) => {
   }
 });
 
-app.get('/api/tareas/:id/registro', requireDocente, async (req, res) => {
+app.get('/api/tareas/:id/registro', requireAdminOProfesor, async (req, res) => {
   try {
-    const usuarioId = await usuarioEfectivo(req);
-    const tarea = await pool.query(
-      `SELECT t.id, t.materia_id FROM tareas t JOIN materias m ON m.id = t.materia_id WHERE t.id = $1 AND ${VISIBLE_MATERIA.replace(/\$ADMIN/g, '$3').replace(/\$USR/g, '$2')}`,
-      [req.params.id, usuarioId, req.usuario.rol === 'admin']
-    );
+    const tarea = await pool.query('SELECT id, materia_id FROM tareas WHERE id = $1', [req.params.id]);
     if (tarea.rows.length === 0) return res.status(404).json({ error: 'Tarea no encontrada' });
+    if (!(await materiaDocente(tarea.rows[0].materia_id, req.usuario))) {
+      return res.status(403).json({ error: 'No tienes permiso para ver el registro de esta tarea' });
+    }
     const materiaId = tarea.rows[0].materia_id;
 
     const result = await pool.query(`
@@ -911,7 +708,7 @@ app.get('/api/tareas/:id/registro', requireDocente, async (req, res) => {
   }
 });
 
-app.put('/api/tareas/:id/notas', requireDocente, async (req, res) => {
+app.put('/api/tareas/:id/notas', requireAdminOProfesor, async (req, res) => {
   const { usuario_id, nota, comentario } = req.body;
   if (!usuario_id) return res.status(400).json({ error: 'Debes indicar un estudiante' });
   const notaFinal = nota === '' || nota === null || nota === undefined ? null : Number(nota);
@@ -919,11 +716,11 @@ app.put('/api/tareas/:id/notas', requireDocente, async (req, res) => {
     return res.status(400).json({ error: 'La nota debe estar entre 0 y 10' });
   }
   try {
-    const tarea = await pool.query(
-      `SELECT t.id FROM tareas t JOIN materias m ON m.id = t.materia_id WHERE t.id = $1 AND ${VISIBLE_MATERIA.replace(/\$ADMIN/g, '$3').replace(/\$USR/g, '$2')}`,
-      [req.params.id, await usuarioEfectivo(req), req.usuario.rol === 'admin']
-    );
+    const tarea = await pool.query('SELECT id, materia_id FROM tareas WHERE id = $1', [req.params.id]);
     if (tarea.rows.length === 0) return res.status(404).json({ error: 'Tarea no encontrada' });
+    if (!(await materiaDocente(tarea.rows[0].materia_id, req.usuario))) {
+      return res.status(403).json({ error: 'No tienes permiso para calificar esta tarea' });
+    }
     const result = await pool.query(
       `INSERT INTO notas (tarea_id, usuario_id, nota, comentario)
        VALUES ($1, $2, $3, $4)
@@ -941,9 +738,6 @@ app.put('/api/tareas/:id/notas', requireDocente, async (req, res) => {
 app.use((err, req, res, next) => {
   if (err instanceof multer.MulterError) {
     return res.status(400).json({ error: 'El archivo supera el tamaño máximo permitido (5MB)' });
-  }
-  if (err.message === 'TIPO_ARCHIVO_NO_PERMITIDO') {
-    return res.status(400).json({ error: 'Tipo de archivo no permitido. Solo se aceptan PDF, Word e imágenes.' });
   }
   console.error(err);
   res.status(500).json({ error: 'Error interno del servidor' });

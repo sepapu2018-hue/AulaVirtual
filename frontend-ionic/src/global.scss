@@ -1,0 +1,240 @@
+/*
+ * App Global CSS
+ * ----------------------------------------------------------------------------
+ * Put style rules here that you want to apply globally. These styles are for
+ * the entire app and not just one component. Additionally, this file can be
+ * used as an entry point to import other CSS/Sass files to be included in the
+ * output CSS.
+ * For more information on global stylesheets, visit the documentation:
+ * https://ionicframework.com/docs/layout/global-stylesheets
+ */
+
+/* Core CSS required for Ionic components to work properly */
+@import "@ionic/angular/css/core.css";
+
+/* Basic CSS for apps built with Ionic */
+@import "@ionic/angular/css/normalize.css";
+@import "@ionic/angular/css/structure.css";
+@import "@ionic/angular/css/typography.css";
+@import "@ionic/angular/css/display.css";
+
+/* Optional CSS utils that can be commented out */
+@import "@ionic/angular/css/padding.css";
+@import "@ionic/angular/css/float-elements.css";
+@import "@ionic/angular/css/text-alignment.css";
+@import "@ionic/angular/css/text-transformation.css";
+@import "@ionic/angular/css/flex-utils.css";
+
+/**
+ * Ionic Dark Mode
+ * -----------------------------------------------------
+ * For more info, please see:
+ * https://ionicframework.com/docs/theming/dark-mode
+ */
+
+/* @import "@ionic/angular/css/palettes/dark.always.css"; */
+/* @import "@ionic/angular/css/palettes/dark.class.css"; */
+/*
+ * Esta app está diseñada solo en modo claro (los colores no están
+ * pensados para modo oscuro). No se importa dark.system.css porque
+ * activaba automáticamente estilos oscuros en overlays (action-sheet,
+ * alertas, popovers) cuando el sistema operativo está en modo oscuro,
+ * dejándolos casi sin estilo y en negro.
+ */
+
+/*
+ * Identidad tipográfica de GestorTareas: la fuente del sistema
+ * (San Francisco en Apple, Segoe UI en Windows) tanto en títulos
+ * como en el resto de la interfaz. Ver src/theme/variables.scss
+ * para la paleta de color.
+ */
+body,
+ion-app {
+  font-family: var(--gt-font-body);
+}
+
+h1,
+h2,
+h3,
+.gt-display {
+  font-family: var(--gt-font-display);
+  font-weight: 600;
+  letter-spacing: -0.02em;
+}
+
+/* Etiqueta corta en versalitas: reemplaza a los iconos decorativos
+   como marcador de sección (ver "Estructura es información"). */
+.gt-eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--gt-ink-muted);
+  font-family: var(--gt-font-body);
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+}
+
+/* Cifras alineadas en tablas y contadores. */
+.gt-num {
+  font-variant-numeric: tabular-nums;
+}
+
+/* Ionic aplica MAYÚSCULAS por defecto (Material Design); para el
+   registro más editorial de esta app se desactiva globalmente. */
+ion-button {
+  --box-shadow: none;
+  font-weight: 600;
+  text-transform: none;
+  letter-spacing: 0;
+}
+
+/*
+ * Acciones secundarias (Editar / Eliminar / etc.) como enlaces de
+ * texto en vez de pastillas de color: más discretas y propias de un
+ * panel de administración serio. Se usan siempre en pareja dentro
+ * de un contenedor con la clase .gt-fila-acciones.
+ */
+.gt-fila-acciones {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 2px;
+}
+
+.boton-texto {
+  --background: transparent;
+  --background-hover: transparent;
+  --background-activated: transparent;
+  --color: var(--gt-ink-muted);
+  --padding-start: 8px;
+  --padding-end: 8px;
+
+  min-height: 30px;
+  margin: 0;
+  font-size: 12.5px;
+  font-weight: 600;
+}
+
+.boton-texto::part(native) {
+  text-decoration: underline;
+  text-decoration-color: transparent;
+  text-underline-offset: 3px;
+  transition: text-decoration-color 0.15s ease, color 0.15s ease;
+}
+
+.boton-texto:hover::part(native) {
+  color: var(--gt-ink-700);
+  text-decoration-color: currentColor;
+}
+
+.boton-texto-danger {
+  --color: var(--gt-danger-700);
+}
+
+.boton-texto-danger:hover::part(native) {
+  color: var(--gt-danger-700);
+}
+
+.boton-texto[disabled] {
+  opacity: 0.55;
+}
+
+.separador-acciones {
+  width: 1px;
+  height: 14px;
+  background: var(--gt-line-strong);
+}
+
+/*
+ * Selector de dos opciones (p. ej. Estudiante / Profesor) como
+ * botones simples en vez de ion-segment: evita depender del cálculo
+ * interno del indicador deslizante de Ionic, que a veces tarda en
+ * asentarse dentro de un modal recién abierto.
+ */
+.gt-selector {
+  display: flex;
+  gap: 6px;
+  padding: 4px;
+  border-radius: 11px;
+  background: var(--gt-paper);
+  border: 1px solid var(--gt-line);
+}
+
+.gt-selector-boton {
+  flex: 1;
+  padding: 9px 12px;
+  border: 0;
+  border-radius: 8px;
+
+  background: transparent;
+  color: var(--gt-ink-muted);
+
+  font-family: inherit;
+  font-size: 12.5px;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  text-align: center;
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.gt-selector-boton.activo {
+  background: #ffffff;
+  color: var(--gt-ink-700);
+  box-shadow: 0 1px 3px rgba(16, 24, 32, 0.15);
+}
+
+.gt-selector-boton:disabled {
+  opacity: 0.55;
+  cursor: default;
+}
+
+/*
+ * Alertas de confirmación (ion-alert): Ionic las dibuja con el
+ * estilo Material por defecto (mayúsculas, esquinas cuadradas). Se
+ * ajustan para que combinen con el resto de la app.
+ */
+ion-alert {
+  --background: #ffffff;
+  --border-radius: 14px;
+  --backdrop-opacity: 0.35;
+
+  color-scheme: light;
+}
+
+ion-alert::part(header) {
+  color: var(--gt-text);
+  font-family: var(--gt-font-display);
+  font-size: 17px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+
+ion-alert::part(message) {
+  color: var(--gt-ink-muted);
+  font-size: 14px;
+  line-height: 1.5;
+  margin-top: 6px;
+}
+
+ion-alert::part(button) {
+  font-weight: 700;
+  font-size: 14px;
+  text-transform: none !important;
+  letter-spacing: 0;
+}
+
+ion-action-sheet {
+  --background: #ffffff;
+  --backdrop-opacity: 0.35;
+
+  color-scheme: light;
+}
+
+ion-action-sheet::part(button) {
+  font-weight: 600;
+  text-transform: none;
+}
