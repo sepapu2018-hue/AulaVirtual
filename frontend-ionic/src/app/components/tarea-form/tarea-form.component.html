@@ -22,23 +22,21 @@
 
     <div class="formulario-encabezado">
 
-      <span class="formulario-icono">
-        +
+      <span class="gt-eyebrow">
+        {{ editando ? 'Editar deber' : 'Nuevo deber' }}
       </span>
 
-      <div>
-        <h2>
-          {{ editando ? 'Modificar la tarea' : 'Agregar una tarea' }}
-        </h2>
+      <h2>
+        {{ editando ? 'Modificar la tarea' : 'Agregar una tarea' }}
+      </h2>
 
-        <p>
-          @if (editando) {
-            Actualiza la información de este deber.
-          } @else {
-            Registra un nuevo deber para esta materia.
-          }
-        </p>
-      </div>
+      <p>
+        @if (editando) {
+          Actualiza la información de este deber.
+        } @else {
+          Registra un nuevo deber para esta materia.
+        }
+      </p>
 
     </div>
 

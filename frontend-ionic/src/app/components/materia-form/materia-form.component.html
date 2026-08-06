@@ -22,25 +22,25 @@
   <div class="formulario-contenedor">
 
     <div class="formulario-presentacion">
-      <span>📚</span>
+      <span class="gt-eyebrow">
+        {{ editando ? 'Editar' : 'Nueva materia' }}
+      </span>
 
-      <div>
-        <h1>
-          {{
-            editando
-              ? 'Modificar materia'
-              : 'Agregar materia'
-          }}
-        </h1>
+      <h1>
+        {{
+          editando
+            ? 'Modificar materia'
+            : 'Agregar materia'
+        }}
+      </h1>
 
-        <p>
-          {{
-            editando
-              ? 'Actualiza el nombre y el profesor.'
-              : 'Registra una nueva materia en el aula.'
-          }}
-        </p>
-      </div>
+      <p>
+        {{
+          editando
+            ? 'Actualiza el nombre y el profesor.'
+            : 'Registra una nueva materia en el aula.'
+        }}
+      </p>
     </div>
 
     <form
@@ -63,18 +63,27 @@
       <div class="campo">
         <label>Profesor</label>
 
-        <ion-input
-          name="profesor"
-          [(ngModel)]="profesor"
+        <ion-select
+          name="profesorId"
+          [(ngModel)]="profesorId"
           fill="outline"
-          placeholder="Ej: Ing. Juan Pérez"
-          maxlength="100"
+          placeholder="Selecciona un profesor"
+          interface="action-sheet"
           [disabled]="guardando">
-        </ion-input>
 
-        <small>
-          Este campo es opcional.
-        </small>
+          @for (docente of profesores; track docente.id) {
+            <ion-select-option [value]="docente.id">
+              {{ docente.nombre }}
+            </ion-select-option>
+          }
+
+        </ion-select>
+
+        @if (profesores.length === 0) {
+          <small>
+            Todavía no hay profesores registrados. Crea una cuenta de profesor primero.
+          </small>
+        }
       </div>
 
       @if (mensajeError) {

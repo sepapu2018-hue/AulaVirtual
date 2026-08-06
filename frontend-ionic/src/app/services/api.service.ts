@@ -6,10 +6,16 @@ export interface Usuario {
   id: number;
   nombre: string;
   correo: string;
-  rol: 'admin' | 'estudiante';
+  rol: 'admin' | 'profesor' | 'estudiante';
 }
 
 export interface Estudiante {
+  id: number;
+  nombre: string;
+  correo: string;
+}
+
+export interface Profesor {
   id: number;
   nombre: string;
   correo: string;
@@ -24,6 +30,7 @@ export interface Materia {
   id: number;
   nombre: string;
   profesor: string | null;
+  profesor_id: number | null;
   orden: number;
   fecha_creacion: string;
   es_dueno: boolean;
@@ -210,7 +217,7 @@ export class ApiService {
   crearMateria(
     datos: {
       nombre: string;
-      profesor: string;
+      profesor_id: number;
     }
   ): Observable<unknown> {
     const token = this.obtenerToken();
@@ -230,7 +237,7 @@ export class ApiService {
     materiaId: number,
     datos: {
       nombre: string;
-      profesor: string;
+      profesor_id: number;
     }
   ): Observable<unknown> {
     const token = this.obtenerToken();
@@ -308,6 +315,57 @@ export class ApiService {
       { headers }
     );
 }
+
+  obtenerProfesores(): Observable<Profesor[]> {
+    const token = this.obtenerToken();
+
+    const headers = new HttpHeaders({
+      Authorization: `Bearer ${token}`
+    });
+
+    return this.http.get<Profesor[]>(
+      `${this.apiUrl}/usuarios?rol=profesor`,
+      { headers }
+    );
+  }
+
+  crearProfesor(
+    datos: {
+      nombre: string;
+      correo: string;
+      password: string;
+    }
+  ): Observable<Profesor> {
+    const token = this.obtenerToken();
+
+    const headers = new HttpHeaders({
+      Authorization: `Bearer ${token}`
+    });
+
+    return this.http.post<Profesor>(
+      `${this.apiUrl}/usuarios`,
+      {
+        ...datos,
+        rol: 'profesor'
+      },
+      { headers }
+    );
+  }
+
+  eliminarProfesor(
+    profesorId: number
+  ): Observable<unknown> {
+    const token = this.obtenerToken();
+
+    const headers = new HttpHeaders({
+      Authorization: `Bearer ${token}`
+    });
+
+    return this.http.delete(
+      `${this.apiUrl}/usuarios/${profesorId}`,
+      { headers }
+    );
+  }
 
   obtenerEstudiantesMateria(
     materiaId: number

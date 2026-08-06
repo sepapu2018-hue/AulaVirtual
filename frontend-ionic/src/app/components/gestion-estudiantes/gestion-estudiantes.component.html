@@ -2,7 +2,7 @@
   <ion-toolbar>
 
     <ion-title>
-      Gestionar estudiantes
+      Gestionar cuentas
     </ion-title>
 
     <ion-buttons slot="end">
@@ -23,18 +23,14 @@
 
     <section class="presentacion">
 
-      <div class="presentacion-icono">
-        👨‍🎓
-      </div>
+      <span class="gt-eyebrow">Cuentas</span>
 
-      <div>
-        <h1>Cuentas de estudiantes</h1>
+      <h1>Profesores y estudiantes</h1>
 
-        <p>
-          Crea una cuenta con correo y
-          contraseña para cada estudiante.
-        </p>
-      </div>
+      <p>
+        Crea una cuenta con correo y
+        contraseña para cada profesor o estudiante.
+      </p>
 
     </section>
 
@@ -47,6 +43,21 @@
           Acceso al aula virtual
         </span>
       </div>
+
+      <ion-segment
+        [(ngModel)]="tipoNuevaCuenta"
+        [disabled]="creando"
+        class="segmento-tipo">
+
+        <ion-segment-button value="estudiante">
+          <ion-label>Estudiante</ion-label>
+        </ion-segment-button>
+
+        <ion-segment-button value="profesor">
+          <ion-label>Profesor</ion-label>
+        </ion-segment-button>
+
+      </ion-segment>
 
       <form
         class="form-estudiante"
@@ -61,7 +72,7 @@
               name="nombre"
               [(ngModel)]="nombre"
               fill="outline"
-              placeholder="Nombre del estudiante"
+              placeholder="Nombre completo"
               autocomplete="name"
               maxlength="100"
               [disabled]="creando">
@@ -76,7 +87,7 @@
               [(ngModel)]="correo"
               type="email"
               fill="outline"
-              placeholder="estudiante@correo.com"
+              placeholder="correo@correo.com"
               autocomplete="email"
               maxlength="150"
               [disabled]="creando">
@@ -112,7 +123,11 @@
 
             <span>Creando cuenta...</span>
           } @else {
-            Crear cuenta
+            {{
+              tipoNuevaCuenta === 'profesor'
+                ? 'Crear cuenta de profesor'
+                : 'Crear cuenta de estudiante'
+            }}
           }
 
         </ion-button>
@@ -124,12 +139,30 @@
     <section class="panel-lista">
 
       <div class="panel-titulo">
-        <h2>Estudiantes registrados</h2>
+        <h2>Cuentas registradas</h2>
 
         <span>
-          {{ estudiantes.length }}
+          {{ listaActual.length }}
         </span>
       </div>
+
+      <ion-segment
+        [(ngModel)]="tipoListado"
+        class="segmento-tipo">
+
+        <ion-segment-button value="estudiante">
+          <ion-label>
+            Estudiantes ({{ estudiantes.length }})
+          </ion-label>
+        </ion-segment-button>
+
+        <ion-segment-button value="profesor">
+          <ion-label>
+            Profesores ({{ profesores.length }})
+          </ion-label>
+        </ion-segment-button>
+
+      </ion-segment>
 
       <ion-searchbar
         [(ngModel)]="busqueda"
@@ -146,7 +179,7 @@
           </ion-spinner>
 
           <span>
-            Cargando estudiantes...
+            Cargando cuentas...
           </span>
 
         </div>
@@ -154,41 +187,44 @@
 
       @if (
         !cargando &&
-        estudiantes.length === 0
+        listaActual.length === 0
       ) {
         <div class="estado-vacio">
-          Todavía no existen cuentas de
-          estudiantes.
+          @if (tipoListado === 'profesor') {
+            Todavía no existen cuentas de profesores.
+          } @else {
+            Todavía no existen cuentas de estudiantes.
+          }
         </div>
       }
 
       @if (
         !cargando &&
-        estudiantes.length > 0 &&
-        estudiantesFiltrados.length === 0
+        listaActual.length > 0 &&
+        listaFiltrada.length === 0
       ) {
         <div class="estado-vacio">
-          Ningún estudiante coincide con
+          Ninguna cuenta coincide con
           la búsqueda.
         </div>
       }
 
       @if (
         !cargando &&
-        estudiantesFiltrados.length > 0
+        listaFiltrada.length > 0
       ) {
         <div class="lista-estudiantes">
 
           @for (
-            estudiante of estudiantesFiltrados;
-            track estudiante.id
+            cuenta of listaFiltrada;
+            track cuenta.id
           ) {
             <article class="estudiante-fila">
 
               <span class="estudiante-avatar">
                 {{
                   obtenerIniciales(
-                    estudiante.nombre
+                    cuenta.nombre
                   )
                 }}
               </span>
@@ -196,43 +232,46 @@
               <div class="estudiante-info">
 
                 <strong>
-                  {{ estudiante.nombre }}
+                  {{ cuenta.nombre }}
                 </strong>
 
                 <span>
-                  {{ estudiante.correo }}
+                  {{ cuenta.correo }}
                 </span>
 
               </div>
 
               <div class="estudiante-acciones">
 
+                @if (tipoListado === 'estudiante') {
+                  <ion-button
+                    type="button"
+                    size="small"
+                    fill="clear"
+                    class="boton-texto"
+                    [disabled]="operacionEnProceso"
+                    (click)="consultarAula(cuenta)">
+
+                    Ver aula
+
+                  </ion-button>
+
+                  <span class="separador-acciones" aria-hidden="true"></span>
+                }
+
                 <ion-button
                   type="button"
                   size="small"
                   fill="clear"
-                  class="boton-ver-aula"
+                  class="boton-texto boton-texto-danger"
                   [disabled]="operacionEnProceso"
-                  (click)="consultarAula(estudiante)">
-
-                  Ver aula
-
-                </ion-button>
-
-                <ion-button
-                  type="button"
-                  size="small"
-                  fill="clear"
-                  class="boton-eliminar"
-                  [disabled]="operacionEnProceso"
-                  (click)="confirmarEliminar(estudiante)">
+                  (click)="confirmarEliminar(cuenta)">
 
                   @if (
-                    eliminandoEstudianteId ===
-                    estudiante.id
+                    eliminandoId ===
+                    cuenta.id
                   ) {
-                    <ion-spinner name="crescent">
-                    </ion-spinner>
+                    <ion-spinner name="crescent"></ion-spinner>
                   } @else {
                     Eliminar
                   }

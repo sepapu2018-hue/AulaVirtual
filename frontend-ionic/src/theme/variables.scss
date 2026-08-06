@@ -1,2 +1,66 @@
-// For information on how to create your own theme, please refer to:
-// https://ionicframework.com/docs/theming/
+// Paleta e identidad tipográfica de GestorTareas.
+// Mismos tonos de azul que el diseño original, refinados y consistentes
+// en toda la app a través de estas variables compartidas.
+
+:root {
+  // Tinta (azul institucional, más profundo que el original)
+  --gt-ink-900: #0f2138;
+  --gt-ink-800: #16304c;
+  --gt-ink-700: #1e3a5f;
+  --gt-ink-100: #e7edf5;
+  --gt-ink-050: #f3f6fa;
+
+  // Acento cálido (usado con moderación: hero, prioridad media, foco)
+  --gt-amber-700: #a85a12;
+  --gt-amber-100: #fbf1e2;
+
+  // Semánticos
+  --gt-success-700: #2c6b4a;
+  --gt-success-100: #eaf4ee;
+
+  --gt-danger-700: #a3352c;
+  --gt-danger-100: #faeceb;
+
+  --gt-info-700: #2453ad;
+  --gt-info-100: #eaf0fd;
+
+  // Neutros (tinte cálido sutil, no gris frío de plantilla)
+  --gt-paper: #f8f7f4;
+  --gt-surface: #ffffff;
+  --gt-line: #e2e1dc;
+  --gt-line-strong: #cfcec7;
+  --gt-ink-muted: #5c6570;
+  --gt-ink-faint: #8b93a0;
+  --gt-text: #1a1f28;
+
+  // Tipografía
+  --gt-font-display: "Fraunces", "Iowan Old Style", "Georgia", serif;
+  --gt-font-body: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+
+  // Overrides de la paleta de Ionic para que todos los componentes
+  // (ion-button, ion-spinner, focos, etc.) hereden el mismo azul.
+  --ion-color-primary: var(--gt-ink-700);
+  --ion-color-primary-rgb: 30, 58, 95;
+  --ion-color-primary-contrast: #ffffff;
+  --ion-color-primary-contrast-rgb: 255, 255, 255;
+  --ion-color-primary-shade: var(--gt-ink-800);
+  --ion-color-primary-tint: #33517a;
+
+  --ion-color-success: var(--gt-success-700);
+  --ion-color-success-rgb: 44, 107, 74;
+  --ion-color-success-contrast: #ffffff;
+  --ion-color-success-contrast-rgb: 255, 255, 255;
+  --ion-color-success-shade: #235a3e;
+  --ion-color-success-tint: #3f7d5c;
+
+  --ion-color-danger: var(--gt-danger-700);
+  --ion-color-danger-rgb: 163, 53, 44;
+  --ion-color-danger-contrast: #ffffff;
+  --ion-color-danger-contrast-rgb: 255, 255, 255;
+  --ion-color-danger-shade: #8c2d25;
+  --ion-color-danger-tint: #b04940;
+
+  --ion-font-family: var(--gt-font-body);
+  --ion-background-color: var(--gt-paper);
+  --ion-text-color: var(--gt-text);
+}

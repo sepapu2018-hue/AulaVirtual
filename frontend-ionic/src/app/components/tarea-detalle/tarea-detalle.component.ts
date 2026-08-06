@@ -63,13 +63,17 @@ export class TareaDetalleComponent implements OnInit {
   ngOnInit(): void {
     this.cargarComentarios();
 
-    if (this.esAdministrador) {
+    if (this.esDocente) {
       this.cargarRegistroEntregas();
     }
   }
 
   get esAdministrador(): boolean {
     return this.usuario?.rol === 'admin';
+  }
+
+  get esDocente(): boolean {
+    return this.usuario?.rol === 'admin' || this.usuario?.rol === 'profesor';
   }
 
   get tieneCalificacion(): boolean {
@@ -473,13 +477,15 @@ export class TareaDetalleComponent implements OnInit {
   obtenerTextoRol(
     comentario: Comentario
   ): string {
-    return comentario.autor_rol === 'admin'
-      ? 'Profesor'
-      : 'Estudiante';
+    if (comentario.autor_rol === 'admin' || comentario.autor_rol === 'profesor') {
+      return 'Profesor';
+    }
+
+    return 'Estudiante';
   }
 
   cargarRegistroEntregas(): void {
-    if (!this.esAdministrador) {
+    if (!this.esDocente) {
       return;
     }
 

@@ -1,13 +1,13 @@
 :host {
-  --primary: #1e3a5f;
-  --primary-dark: #142944;
-  --primary-light: #eaeff5;
-  --accent: #2f6690;
-  --gray-50: #f7f8fa;
-  --gray-100: #eef0f3;
-  --gray-200: #dde1e7;
-  --gray-500: #5f6b7a;
-  --gray-900: #101820;
+  --primary: var(--gt-ink-700);
+  --primary-dark: var(--gt-ink-900);
+  --primary-light: var(--gt-ink-100);
+  --accent: var(--gt-ink-800);
+  --gray-50: var(--gt-paper);
+  --gray-100: #efeee9;
+  --gray-200: var(--gt-line);
+  --gray-500: var(--gt-ink-muted);
+  --gray-900: var(--gt-text);
 }
 
 ion-content {
@@ -33,22 +33,25 @@ ion-content {
 .marca {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 9px;
   color: var(--primary);
-  font-size: 15px;
-  font-weight: 700;
+  font-family: var(--gt-font-display);
+  font-size: 16px;
+  font-weight: 600;
 }
 
-.marca-icono {
+.marca-sello {
   width: 30px;
   height: 30px;
-  border-radius: 7px;
-  background: var(--primary-light);
+  border: 1.5px solid var(--primary);
+  border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 17px;
-  font-weight: 800;
+  font-family: var(--gt-font-display);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
 }
 
 .sesion {
@@ -114,8 +117,11 @@ ion-content {
   text-align: center;
 }
 
-.modo-aula-icono {
-  font-size: 16px;
+.modo-aula-etiqueta {
+  padding: 3px 9px;
+  border: 1px solid #d6b74a;
+  border-radius: 999px;
+  color: #6b4f00;
 }
 
 .modo-aula-banner strong {
@@ -246,29 +252,60 @@ ion-content {
   margin: 0;
   overflow: hidden;
   border: 1px solid var(--gray-200);
-  border-radius: 8px;
+  border-left: 5px solid var(--primary);
+  border-radius: 6px;
   background: #ffffff;
-  box-shadow: 0 2px 10px rgba(16, 24, 32, 0.08);
+  box-shadow: 0 2px 10px rgba(16, 24, 32, 0.06);
+  transition: box-shadow 0.2s ease, transform 0.2s ease;
 }
 
-.materia-banner {
-  height: 64px;
+.materia-card:hover {
+  box-shadow: 0 8px 22px rgba(16, 24, 32, 0.1);
+  transform: translateY(-1px);
 }
 
 .materia-body {
-  padding: 15px 16px 17px;
+  padding: 17px 18px 19px;
+}
+
+.materia-cabecera {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  margin-bottom: 13px;
+}
+
+.materia-sello {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+
+  width: 38px;
+  height: 38px;
+  border: 1.5px solid;
+  border-radius: 50%;
+
+  font-family: var(--gt-font-display);
+  font-size: 15px;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.materia-titulo {
+  min-width: 0;
 }
 
 .materia-body h2 {
   margin: 0;
   color: var(--gray-900);
-  font-size: 17px;
-  font-weight: 700;
+  font-size: 18px;
+  font-weight: 600;
   line-height: 1.3;
 }
 
 .profesor {
-  margin: 7px 0 13px;
+  margin: 4px 0 0;
   color: var(--gray-500);
   font-size: 12px;
 }
@@ -371,43 +408,20 @@ ion-progress-bar {
   text-transform: none;
 }
 
-.boton-editar-materia {
-  min-height: 32px;
-  margin: 0;
-
-  --background: #eaeff5;
-  --color: #1e3a5f;
-  --border-radius: 6px;
-  --box-shadow: none;
-
-  font-size: 11px;
-  font-weight: 700;
-  text-transform: none;
-}
-
 .acciones-materia {
   display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.acciones-admin-materia {
+  display: flex;
+  align-items: center;
   justify-content: flex-end;
-  gap: 6px;
-}
+  gap: 8px;
 
-.boton-eliminar-materia {
-  min-height: 32px;
-  margin: 0;
-
-  --background: #faeeee;
-  --background-activated: #f3dcdc;
-  --color: #9c2b2b;
-  --border-radius: 6px;
-  --box-shadow: none;
-
-  font-size: 11px;
-  font-weight: 700;
-  text-transform: none;
-}
-
-.boton-eliminar-materia[disabled] {
-  opacity: 0.6;
+  padding-top: 10px;
+  border-top: 1px solid var(--gray-100);
 }
 
 ion-modal.materia-form-modal {

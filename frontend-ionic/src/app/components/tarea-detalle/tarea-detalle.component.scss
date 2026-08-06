@@ -1,19 +1,19 @@
 :host {
-  --primary: #1e3a5f;
-  --primary-light: #eaeff5;
+  --primary: var(--gt-ink-700);
+  --primary-light: var(--gt-ink-100);
 
-  --success: #2f6f4e;
-  --success-light: #eef6f1;
+  --success: var(--gt-success-700);
+  --success-light: var(--gt-success-100);
 
-  --danger: #9c2b2b;
+  --danger: var(--gt-danger-700);
 
-  --gray-50: #f7f8fa;
-  --gray-100: #eef0f3;
-  --gray-200: #dde1e7;
-  --gray-400: #8b95a3;
-  --gray-500: #5f6b7a;
-  --gray-700: #333d4a;
-  --gray-900: #101820;
+  --gray-50: var(--gt-paper);
+  --gray-100: #efeee9;
+  --gray-200: var(--gt-line);
+  --gray-400: var(--gt-ink-faint);
+  --gray-500: var(--gt-ink-muted);
+  --gray-700: #3a4048;
+  --gray-900: var(--gt-text);
 
   display: block;
   width: 100%;
@@ -186,34 +186,15 @@ ion-content {
 }
 
 .seccion-titulo {
-  display: flex;
-  align-items: center;
-  gap: 11px;
-
   margin-bottom: 15px;
 }
 
-.seccion-icono {
-  width: 38px;
-  height: 38px;
-  border-radius: 9px;
-
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-
-  background: var(--primary-light);
-
-  font-size: 17px;
-}
-
 .seccion-titulo h2 {
-  margin: 0;
+  margin: 3px 0 0;
 
   color: var(--gray-900);
-  font-size: 14px;
-  font-weight: 700;
+  font-size: 16px;
+  font-weight: 600;
 }
 
 .seccion-titulo p {

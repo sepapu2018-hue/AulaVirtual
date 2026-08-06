@@ -27,7 +27,7 @@ import {
   IonText
 } from '@ionic/angular/standalone';
 
-import { forkJoin } from 'rxjs';
+import { forkJoin, of } from 'rxjs';
 
 import {
   ApiService,
@@ -102,14 +102,19 @@ export class MateriaEstudiantesComponent
     );
   }
 
+  get esDocente(): boolean {
+    const rol = this.apiService.obtenerUsuario()?.rol;
+    return rol === 'admin' || rol === 'profesor';
+  }
+
   cargarEstudiantes(
     mensajeExito = ''
   ): void {
-    if (!this.esAdministrador) {
+    if (!this.esDocente) {
       this.cargando = false;
       this.tipoMensaje = 'danger';
       this.mensaje =
-        'No tienes permiso para gestionar estudiantes.';
+        'No tienes permiso para ver los estudiantes de esta materia.';
 
       return;
     }
@@ -123,9 +128,11 @@ export class MateriaEstudiantesComponent
             this.materiaId
           ),
 
-      todos:
-        this.apiService
-          .obtenerEstudiantes()
+      // Solo el admin gestiona inscripciones, así que solo él
+      // necesita la lista completa de estudiantes disponibles.
+      todos: this.esAdministrador
+        ? this.apiService.obtenerEstudiantes()
+        : of<Estudiante[]>([])
     }).subscribe({
       next: ({ inscritos, todos }) => {
         this.inscritos = inscritos;

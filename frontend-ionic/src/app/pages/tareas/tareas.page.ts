@@ -150,6 +150,11 @@ export class TareasPage implements OnInit {
     return (this.apiService.obtenerUsuario()?.rol === 'admin');
   }
 
+  get esDocente(): boolean {
+    const rol = this.apiService.obtenerUsuario()?.rol;
+    return rol === 'admin' || rol === 'profesor';
+  }
+
   get modoAula():
     ModoAulaEstudiante | null {
     return this.apiService.obtenerModoAula();
@@ -283,7 +288,7 @@ export class TareasPage implements OnInit {
     }
 
     if (
-      !this.esAdministrador ||
+      !this.esDocente ||
       this.publicandoAnuncio
     ) {
       return;
@@ -355,7 +360,7 @@ export class TareasPage implements OnInit {
     anuncio: Anuncio
   ): void {
     if (
-      !this.esAdministrador ||
+      !this.esDocente ||
       this.eliminandoAnuncioId !== null
     ) {
       return;
@@ -513,6 +518,10 @@ export class TareasPage implements OnInit {
   }
 
   abrirFormularioNuevaTarea(): void {
+    if (!this.esDocente) {
+      return;
+    }
+
     this.tareaEnEdicion = null;
     this.mostrarFormulario = true;
   }
@@ -522,6 +531,10 @@ export class TareasPage implements OnInit {
     evento: Event
   ): void {
     evento.stopPropagation();
+
+    if (!this.esDocente) {
+      return;
+    }
 
     this.tareaEnEdicion = tarea;
     this.mostrarFormulario = true;
@@ -534,7 +547,7 @@ export class TareasPage implements OnInit {
   }
 
   abrirEstudiantesMateria(): void {
-    if (!this.esAdministrador) {
+    if (!this.esDocente) {
       return;
     }
 
@@ -589,7 +602,7 @@ export class TareasPage implements OnInit {
   guardarTarea(
     datos: TareaFormularioDatos
   ): void {
-    if (this.guardandoTarea) {
+    if (!this.esDocente || this.guardandoTarea) {
       return;
     }
 
@@ -645,6 +658,10 @@ export class TareasPage implements OnInit {
   ): Promise<void> {
     evento.stopPropagation();
 
+    if (!this.esDocente) {
+      return;
+    }
+
     const alerta =
       await this.alertController.create({
         header: '¿Eliminar esta tarea?',
@@ -669,7 +686,7 @@ export class TareasPage implements OnInit {
   }
 
   eliminarTarea(tarea: Tarea): void {
-    if (this.eliminandoTareaId !== null) {
+    if (!this.esDocente || this.eliminandoTareaId !== null) {
       return;
     }
 
