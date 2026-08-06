@@ -21,9 +21,6 @@ import {
   IonContent,
   IonInput,
   IonSearchbar,
-  IonSegment,
-  IonSegmentButton,
-  IonLabel,
   IonSpinner,
   IonText
 } from '@ionic/angular/standalone';
@@ -55,9 +52,6 @@ type TipoCuenta = 'estudiante' | 'profesor';
     IonContent,
     IonInput,
     IonSearchbar,
-    IonSegment,
-    IonSegmentButton,
-    IonLabel,
     IonSpinner,
     IonText
   ]
