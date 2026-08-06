@@ -43,34 +43,15 @@ ion-content {
 }
 
 .presentacion {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-
   margin-bottom: 17px;
 }
 
-.presentacion-icono {
-  width: 48px;
-  height: 48px;
-  border-radius: 12px;
-
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-
-  background: #eaeff5;
-
-  font-size: 21px;
-}
-
 .presentacion h1 {
-  margin: 0;
+  margin: 4px 0 0;
 
   color: #101820;
-  font-size: 20px;
-  font-weight: 700;
+  font-size: 21px;
+  font-weight: 600;
 }
 
 .presentacion p {
@@ -124,6 +105,10 @@ ion-content {
 
   font-size: 10px;
   font-weight: 700;
+}
+
+.segmento-tipo {
+  margin-bottom: 14px;
 }
 
 .form-estudiante {
@@ -254,22 +239,8 @@ ion-content {
 .estudiante-acciones {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 8px;
   flex-shrink: 0;
-}
-
-.boton-ver-aula {
-  min-height: 32px;
-  margin: 0;
-
-  --background: #eaeff5;
-  --color: #1e3a5f;
-  --border-radius: 6px;
-  --box-shadow: none;
-
-  font-size: 10.5px;
-  font-weight: 700;
-  text-transform: none;
 }
 
 @media (max-width: 480px) {
@@ -283,21 +254,7 @@ ion-content {
   }
 }
 
-.boton-eliminar {
-  min-height: 32px;
-  margin: 0;
-
-  --background: #faeeee;
-  --color: #9c2b2b;
-  --border-radius: 6px;
-  --box-shadow: none;
-
-  font-size: 10.5px;
-  font-weight: 700;
-  text-transform: none;
-}
-
-.boton-eliminar ion-spinner {
+.estudiante-acciones .boton-texto ion-spinner {
   width: 14px;
   height: 14px;
 }

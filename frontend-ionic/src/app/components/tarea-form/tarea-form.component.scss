@@ -1,18 +1,18 @@
 :host {
-  --primary: #1e3a5f;
-  --primary-dark: #142944;
-  --primary-light: #eaeff5;
+  --primary: var(--gt-ink-700);
+  --primary-dark: var(--gt-ink-900);
+  --primary-light: var(--gt-ink-100);
 
-  --gray-50: #f7f8fa;
-  --gray-100: #eef0f3;
-  --gray-200: #dde1e7;
-  --gray-400: #8b95a3;
-  --gray-500: #5f6b7a;
-  --gray-700: #333d4a;
-  --gray-900: #101820;
+  --gray-50: var(--gt-paper);
+  --gray-100: #efeee9;
+  --gray-200: var(--gt-line);
+  --gray-400: var(--gt-ink-faint);
+  --gray-500: var(--gt-ink-muted);
+  --gray-700: #3a4048;
+  --gray-900: var(--gt-text);
 
-  --danger: #9c2b2b;
-  
+  --danger: var(--gt-danger-700);
+
   display: block;
   width: 100%;
   height: 100%;
@@ -65,34 +65,14 @@ ion-content {
 }
 
 .formulario-encabezado {
-  display: flex;
-  align-items: center;
-  gap: 12px;
   margin-bottom: 18px;
 }
 
-.formulario-icono {
-  width: 42px;
-  height: 42px;
-  border-radius: 10px;
-
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-
-  background: var(--primary-light);
-  color: var(--primary);
-
-  font-size: 25px;
-  font-weight: 500;
-}
-
 .formulario-encabezado h2 {
-  margin: 0;
+  margin: 4px 0 0;
   color: var(--gray-900);
-  font-size: 18px;
-  font-weight: 700;
+  font-size: 20px;
+  font-weight: 600;
 }
 
 .formulario-encabezado p {

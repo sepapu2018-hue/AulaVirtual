@@ -16,16 +16,19 @@ import {
   IonButton,
   IonContent,
   IonInput,
+  IonSelect,
+  IonSelectOption,
   IonSpinner
 } from '@ionic/angular/standalone';
 
 import {
-  Materia
+  Materia,
+  Profesor
 } from '../../services/api.service';
 
 export interface MateriaFormularioDatos {
   nombre: string;
-  profesor: string;
+  profesor_id: number;
 }
 
 @Component({
@@ -43,6 +46,8 @@ export interface MateriaFormularioDatos {
     IonButton,
     IonContent,
     IonInput,
+    IonSelect,
+    IonSelectOption,
     IonSpinner
   ]
 })
@@ -50,6 +55,9 @@ export class MateriaFormComponent {
 
   @Input()
   guardando = false;
+
+  @Input()
+  profesores: Profesor[] = [];
 
   private materiaActual: Materia | null = null;
 
@@ -59,10 +67,10 @@ export class MateriaFormComponent {
 
     if (valor) {
       this.nombre = valor.nombre;
-      this.profesor = valor.profesor ?? '';
+      this.profesorId = valor.profesor_id;
     } else {
       this.nombre = '';
-      this.profesor = '';
+      this.profesorId = null;
     }
 
     this.mensajeError = '';
@@ -76,7 +84,7 @@ export class MateriaFormComponent {
     new EventEmitter<MateriaFormularioDatos>();
 
   nombre = '';
-  profesor = '';
+  profesorId: number | null = null;
   mensajeError = '';
 
   get editando(): boolean {
@@ -97,7 +105,6 @@ export class MateriaFormComponent {
     }
 
     const nombreLimpio = this.nombre.trim();
-    const profesorLimpio = this.profesor.trim();
 
     if (!nombreLimpio) {
       this.mensajeError =
@@ -106,11 +113,18 @@ export class MateriaFormComponent {
       return;
     }
 
+    if (!this.profesorId) {
+      this.mensajeError =
+        'Selecciona el profesor de la materia.';
+
+      return;
+    }
+
     this.mensajeError = '';
 
     this.enviarFormulario.emit({
       nombre: nombreLimpio,
-      profesor: profesorLimpio
+      profesor_id: this.profesorId
     });
   }
 }

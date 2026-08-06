@@ -35,3 +35,107 @@
 /* @import "@ionic/angular/css/palettes/dark.always.css"; */
 /* @import "@ionic/angular/css/palettes/dark.class.css"; */
 @import '@ionic/angular/css/palettes/dark.system.css';
+
+/*
+ * Identidad tipográfica de GestorTareas: un serif con carácter para
+ * títulos (Fraunces) y un sans-serif limpio para interfaz y texto
+ * (Inter). Ver src/theme/variables.scss para la paleta de color.
+ */
+body,
+ion-app {
+  font-family: var(--gt-font-body);
+}
+
+h1,
+h2,
+h3,
+.gt-display {
+  font-family: var(--gt-font-display);
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+/* Etiqueta corta en versalitas: reemplaza a los iconos decorativos
+   como marcador de sección (ver "Estructura es información"). */
+.gt-eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--gt-ink-muted);
+  font-family: var(--gt-font-body);
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+}
+
+/* Cifras alineadas en tablas y contadores. */
+.gt-num {
+  font-variant-numeric: tabular-nums;
+}
+
+/* Ionic aplica MAYÚSCULAS por defecto (Material Design); para el
+   registro más editorial de esta app se desactiva globalmente. */
+ion-button {
+  --box-shadow: none;
+  font-weight: 600;
+  text-transform: none;
+  letter-spacing: 0;
+}
+
+/*
+ * Acciones secundarias (Editar / Eliminar / etc.) como enlaces de
+ * texto en vez de pastillas de color: más discretas y propias de un
+ * panel de administración serio. Se usan siempre en pareja dentro
+ * de un contenedor con la clase .gt-fila-acciones.
+ */
+.gt-fila-acciones {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 2px;
+}
+
+.boton-texto {
+  --background: transparent;
+  --background-hover: transparent;
+  --background-activated: transparent;
+  --color: var(--gt-ink-muted);
+  --padding-start: 8px;
+  --padding-end: 8px;
+
+  min-height: 30px;
+  margin: 0;
+  font-size: 12.5px;
+  font-weight: 600;
+}
+
+.boton-texto::part(native) {
+  text-decoration: underline;
+  text-decoration-color: transparent;
+  text-underline-offset: 3px;
+  transition: text-decoration-color 0.15s ease, color 0.15s ease;
+}
+
+.boton-texto:hover::part(native) {
+  color: var(--gt-ink-700);
+  text-decoration-color: currentColor;
+}
+
+.boton-texto-danger {
+  --color: var(--gt-danger-700);
+}
+
+.boton-texto-danger:hover::part(native) {
+  color: var(--gt-danger-700);
+}
+
+.boton-texto[disabled] {
+  opacity: 0.55;
+}
+
+.separador-acciones {
+  width: 1px;
+  height: 14px;
+  background: var(--gt-line-strong);
+}

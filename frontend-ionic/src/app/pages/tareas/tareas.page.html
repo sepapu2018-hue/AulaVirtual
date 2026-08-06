@@ -3,7 +3,7 @@
     <div class="barra-contenido">
 
       <div class="marca">
-        <span class="marca-icono">✓</span>
+        <span class="marca-sello">GT</span>
         <span>GestorTareas</span>
       </div>
 
@@ -20,7 +20,7 @@
           <span>
             {{ esAdministrador
               ? 'Administrador'
-              : 'Estudiante'
+              : (usuario?.rol === 'profesor' ? 'Profesor' : 'Estudiante')
             }}
           </span>
         </div>
@@ -46,25 +46,29 @@
 
     <div class="hero-contenido">
 
-      <ion-button
-        fill="clear"
-        size="small"
-        class="boton-volver"
-        (click)="volverMaterias()">
-        ← Mis Materias
-      </ion-button>
+      <div class="hero-barra-acciones">
 
-      @if (esAdministrador) {
         <ion-button
-          type="button"
-          fill="outline"
-          class="boton-estudiantes-materia"
-          (click)="abrirEstudiantesMateria()">
-
-          Estudiantes
-
+          fill="clear"
+          size="small"
+          class="boton-volver"
+          (click)="volverMaterias()">
+          ← Mis Materias
         </ion-button>
-      }
+
+        @if (esDocente) {
+          <ion-button
+            type="button"
+            fill="outline"
+            class="boton-estudiantes-materia"
+            (click)="abrirEstudiantesMateria()">
+
+            Estudiantes
+
+          </ion-button>
+        }
+
+      </div>
 
       <div class="hero-texto">
         <h1>
@@ -111,64 +115,36 @@
 
     <section class="estadisticas">
 
-      <div class="estadistica-card">
-        <span
-          class="estadistica-icono icono-azul">
-          ☷
-        </span>
+      <div class="estadistica-card marca-azul">
+        <strong class="gt-num">
+          {{ estadisticas.total }}
+        </strong>
 
-        <div>
-          <strong>
-            {{ estadisticas.total }}
-          </strong>
-
-          <span>Total tareas</span>
-        </div>
+        <span>Total tareas</span>
       </div>
 
-      <div class="estadistica-card">
-        <span
-          class="estadistica-icono icono-amarillo">
-          ◷
-        </span>
+      <div class="estadistica-card marca-ambar">
+        <strong class="gt-num">
+          {{ estadisticas.pendientes }}
+        </strong>
 
-        <div>
-          <strong>
-            {{ estadisticas.pendientes }}
-          </strong>
-
-          <span>Pendientes</span>
-        </div>
+        <span>Pendientes</span>
       </div>
 
-      <div class="estadistica-card">
-        <span
-          class="estadistica-icono icono-verde">
-          ✓
-        </span>
+      <div class="estadistica-card marca-verde">
+        <strong class="gt-num">
+          {{ estadisticas.completadas }}
+        </strong>
 
-        <div>
-          <strong>
-            {{ estadisticas.completadas }}
-          </strong>
-
-          <span>Completadas</span>
-        </div>
+        <span>Completadas</span>
       </div>
 
-      <div class="estadistica-card">
-        <span
-          class="estadistica-icono icono-rojo">
-          !
-        </span>
+      <div class="estadistica-card marca-roja">
+        <strong class="gt-num">
+          {{ estadisticas.vencidas }}
+        </strong>
 
-        <div>
-          <strong>
-            {{ estadisticas.vencidas }}
-          </strong>
-
-          <span>Vencidas</span>
-        </div>
+        <span>Vencidas</span>
       </div>
 
     </section>
@@ -179,21 +155,16 @@
 
         <div class="anuncios-cabecera">
 
-          <div class="anuncios-titulo-icono">
-            📣
-          </div>
+          <span class="gt-eyebrow">Comunicados</span>
+          <h2>Tablón de anuncios</h2>
 
-          <div>
-            <h2>Tablón de anuncios</h2>
-
-            <p>
-              Avisos importantes de esta materia
-            </p>
-          </div>
+          <p>
+            Avisos importantes de esta materia
+          </p>
 
         </div>
 
-        @if (esAdministrador) {
+        @if (esDocente) {
           <form
             class="form-anuncio"
             (ngSubmit)="publicarAnuncio()">
@@ -260,10 +231,6 @@
             ) {
               <article class="anuncio-item">
 
-                <div class="anuncio-icono">
-                  📢
-                </div>
-
                 <div class="anuncio-cuerpo">
 
                   <p class="anuncio-contenido">
@@ -280,7 +247,7 @@
 
                 </div>
 
-                @if (esAdministrador) {
+                @if (esDocente) {
                   <button
                     type="button"
                     class="boton-eliminar-anuncio"
@@ -319,8 +286,8 @@
       <section class="panel panel-tareas">
 
         <div class="panel-titulo">
-          <span class="panel-icono">☷</span>
-          <h2>Lista de Tareas</h2>
+          <span class="gt-eyebrow">Deberes</span>
+          <h2>Lista de tareas</h2>
         </div>
 
         <ion-searchbar
@@ -463,7 +430,6 @@
                           [class.fecha-vencida]="
                             estaVencida(tarea)
                           ">
-                          📅
                           {{
                             formatearFecha(
                               tarea.fecha_limite
@@ -473,7 +439,6 @@
 
                         @if (tarea.num_archivos > 0) {
                           <span class="archivo">
-                            📎
                             {{ tarea.num_archivos }}
                             archivo{{
                               tarea.num_archivos === 1
@@ -485,51 +450,55 @@
 
                       </div>
 
-                      <div class="tarea-acciones">
+                      @if (esDocente) {
+                        <div class="tarea-acciones">
 
-                        <ion-button
-                          type="button"
-                          size="small"
-                          fill="clear"
-                          class="boton-editar-tarea"
-                          [disabled]="
-                            eliminandoTareaId === tarea.id
-                          "
-                          (click)="
-                            abrirFormularioEditar(
-                              tarea,
-                              $event
-                            )
-                          ">
-                          Editar
-                        </ion-button>
+                          <ion-button
+                            type="button"
+                            size="small"
+                            fill="clear"
+                            class="boton-texto"
+                            [disabled]="
+                              eliminandoTareaId === tarea.id
+                            "
+                            (click)="
+                              abrirFormularioEditar(
+                                tarea,
+                                $event
+                              )
+                            ">
+                            Editar
+                          </ion-button>
 
-                        <ion-button
-                          type="button"
-                          size="small"
-                          fill="clear"
-                          class="boton-eliminar-tarea"
-                          [disabled]="
-                            eliminandoTareaId === tarea.id
-                          "
-                          (click)="
-                            solicitarEliminarTarea(
-                              tarea,
-                              $event
-                            )
-                          ">
+                          <span class="separador-acciones" aria-hidden="true"></span>
 
-                          @if (
-                            eliminandoTareaId === tarea.id
-                          ) {
-                            <ion-spinner name="crescent"></ion-spinner>
-                          } @else {
-                            Eliminar
-                          }
+                          <ion-button
+                            type="button"
+                            size="small"
+                            fill="clear"
+                            class="boton-texto boton-texto-danger"
+                            [disabled]="
+                              eliminandoTareaId === tarea.id
+                            "
+                            (click)="
+                              solicitarEliminarTarea(
+                                tarea,
+                                $event
+                              )
+                            ">
 
-                        </ion-button>
+                            @if (
+                              eliminandoTareaId === tarea.id
+                            ) {
+                              <ion-spinner name="crescent"></ion-spinner>
+                            } @else {
+                              Eliminar
+                            }
 
-                      </div>
+                          </ion-button>
+
+                        </div>
+                      }
 
                     </div>
 
@@ -548,20 +517,22 @@
     </main>
 
   }
-  <ion-fab
-    slot="fixed"
-    vertical="bottom"
-    horizontal="end">
+  @if (esDocente) {
+    <ion-fab
+      slot="fixed"
+      vertical="bottom"
+      horizontal="end">
 
-    <ion-fab-button
-      color="primary"
-      (click)="abrirFormularioNuevaTarea()">
+      <ion-fab-button
+        color="primary"
+        (click)="abrirFormularioNuevaTarea()">
 
-      <ion-icon name="add"></ion-icon>
+        <ion-icon name="add"></ion-icon>
 
-    </ion-fab-button>
+      </ion-fab-button>
 
-  </ion-fab>
+    </ion-fab>
+  }
 
   <ion-modal
     class="tarea-form-modal"

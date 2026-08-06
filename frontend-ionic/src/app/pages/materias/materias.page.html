@@ -3,7 +3,7 @@
     <div class="barra-contenido">
 
       <div class="marca">
-        <span class="marca-icono">✓</span>
+        <span class="marca-sello">GT</span>
         <span>GestorTareas</span>
       </div>
 
@@ -38,8 +38,8 @@
 @if (modoAula) {
   <section class="modo-aula-banner">
 
-    <span class="modo-aula-icono">
-      👁
+    <span class="gt-eyebrow modo-aula-etiqueta">
+      Modo aula
     </span>
 
     <span>
@@ -71,17 +71,17 @@
       <div class="resumen">
 
         <div class="resumen-item">
-          <strong>{{ estadisticas.total }}</strong>
+          <strong class="gt-num">{{ estadisticas.total }}</strong>
           <span>Tareas totales</span>
         </div>
 
         <div class="resumen-item">
-          <strong>{{ estadisticas.pendientes }}</strong>
+          <strong class="gt-num">{{ estadisticas.pendientes }}</strong>
           <span>Pendientes</span>
         </div>
 
         <div class="resumen-item resumen-alerta">
-          <strong>{{ estadisticas.vencidas }}</strong>
+          <strong class="gt-num">{{ estadisticas.vencidas }}</strong>
           <span>Atrasadas</span>
         </div>
 
@@ -117,7 +117,7 @@
         class="boton-gestionar-estudiantes"
         (click)="abrirGestionEstudiantes()">
 
-        Gestionar estudiantes
+        Gestionar cuentas
 
       </ion-button>
     }
@@ -173,23 +173,34 @@
           materia of materiasFiltradas;
           track materia.id
         ) {
-          <ion-card class="materia-card">
-
-            <div
-              class="materia-banner"
-              [style.background]="
-                obtenerColorMateria(materia.id)
-              ">
-            </div>
+          <ion-card
+            class="materia-card"
+            [style.border-left-color]="
+              obtenerColorMateria(materia.id)
+            ">
 
             <ion-card-content class="materia-body">
 
-              <h2>{{ materia.nombre }}</h2>
+              <div class="materia-cabecera">
+                <span
+                  class="materia-sello"
+                  [style.color]="
+                    obtenerColorMateria(materia.id)
+                  "
+                  [style.border-color]="
+                    obtenerColorMateria(materia.id)
+                  ">
+                  {{ materia.nombre.charAt(0) }}
+                </span>
 
-              <p class="profesor">
-                Profesor:
-                {{ materia.profesor || 'Sin asignar' }}
-              </p>
+                <div class="materia-titulo">
+                  <h2>{{ materia.nombre }}</h2>
+
+                  <p class="profesor">
+                    {{ materia.profesor || 'Profesor sin asignar' }}
+                  </p>
+                </div>
+              </div>
 
               <div class="estadisticas-materia">
 
@@ -233,13 +244,13 @@
                 </ion-button>
 
                 @if (esAdministrador) {
-                  <div class="acciones-materia">
+                  <div class="acciones-admin-materia">
 
                     <ion-button
                       type="button"
                       size="small"
                       fill="clear"
-                      class="boton-editar-materia"
+                      class="boton-texto"
                       [disabled]="
                         eliminandoMateriaId === materia.id
                       "
@@ -254,11 +265,13 @@
 
                     </ion-button>
 
+                    <span class="separador-acciones" aria-hidden="true"></span>
+
                     <ion-button
                       type="button"
                       size="small"
                       fill="clear"
-                      class="boton-eliminar-materia"
+                      class="boton-texto boton-texto-danger"
                       [disabled]="
                         eliminandoMateriaId === materia.id
                       "
@@ -307,6 +320,7 @@
 
     <app-materia-form
       [materia]="materiaEnEdicion"
+      [profesores]="profesores"
       [guardando]="guardandoMateria"
       (cancelarFormulario)="
         cerrarFormularioMateria()

@@ -26,19 +26,15 @@
 
     <section class="presentacion">
 
-      <div class="presentacion-icono">
-        👥
-      </div>
+      <span class="gt-eyebrow">Estudiantes</span>
 
-      <div>
-        <h1>{{ materiaNombre }}</h1>
+      <h1>{{ materiaNombre }}</h1>
 
-        <p>
-          Agrega estudiantes existentes para
-          que puedan ver y participar en esta
-          materia.
-        </p>
-      </div>
+      <p>
+        Agrega estudiantes existentes para
+        que puedan ver y participar en esta
+        materia.
+      </p>
 
     </section>
 
@@ -55,6 +51,7 @@
       </div>
     } @else {
 
+      @if (esAdministrador) {
       <section class="panel-agregar">
 
         <div class="panel-titulo">
@@ -131,6 +128,7 @@
         }
 
       </section>
+      }
 
       <section class="panel-inscritos">
 
@@ -176,6 +174,7 @@
 
                 </div>
 
+                @if (esAdministrador) {
                 <button
                   type="button"
                   class="boton-quitar"
@@ -202,6 +201,7 @@
                   }
 
                 </button>
+                }
 
               </article>
             }

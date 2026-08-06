@@ -25,7 +25,8 @@ import {
   Materia,
   EstadisticasTareas,
   Estudiante,
-  ModoAulaEstudiante
+  ModoAulaEstudiante,
+  Profesor
 } from '../../services/api.service';
 
 import {
@@ -78,6 +79,8 @@ export class MateriasPage implements OnInit {
 
   materiaEnEdicion: Materia | null = null;
 
+  profesores: Profesor[] = [];
+
   guardandoMateria = false;
   eliminandoMateriaId: number | null = null;
 
@@ -129,6 +132,21 @@ export class MateriasPage implements OnInit {
 
   ngOnInit(): void {
     this.cargarDatos();
+
+    if (this.esAdministrador) {
+      this.cargarProfesores();
+    }
+  }
+
+  cargarProfesores(): void {
+    this.apiService.obtenerProfesores().subscribe({
+      next: (profesores) => {
+        this.profesores = profesores;
+      },
+      error: (error) => {
+        console.error('Error al cargar profesores:', error);
+      }
+    });
   }
 
   get materiasFiltradas(): Materia[] {
@@ -225,6 +243,7 @@ export class MateriasPage implements OnInit {
 
   cerrarGestionEstudiantes(): void {
     this.mostrarGestionEstudiantes = false;
+    this.cargarProfesores();
   }
 
   entrarModoAula(

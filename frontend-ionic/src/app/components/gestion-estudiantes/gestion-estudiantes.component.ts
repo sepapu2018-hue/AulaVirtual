@@ -21,14 +21,20 @@ import {
   IonContent,
   IonInput,
   IonSearchbar,
+  IonSegment,
+  IonSegmentButton,
+  IonLabel,
   IonSpinner,
   IonText
 } from '@ionic/angular/standalone';
 
 import {
   ApiService,
-  Estudiante
+  Estudiante,
+  Profesor
 } from '../../services/api.service';
+
+type TipoCuenta = 'estudiante' | 'profesor';
 
 @Component({
   selector: 'app-gestion-estudiantes',
@@ -49,6 +55,9 @@ import {
     IonContent,
     IonInput,
     IonSearchbar,
+    IonSegment,
+    IonSegmentButton,
+    IonLabel,
     IonSpinner,
     IonText
   ]
@@ -62,7 +71,11 @@ export class GestionEstudiantesComponent
   readonly aulaSeleccionada =
     output<Estudiante>();
 
+  tipoListado: TipoCuenta = 'estudiante';
+  tipoNuevaCuenta: TipoCuenta = 'estudiante';
+
   estudiantes: Estudiante[] = [];
+  profesores: Profesor[] = [];
 
   nombre = '';
   correo = '';
@@ -73,8 +86,7 @@ export class GestionEstudiantesComponent
   cargando = true;
   creando = false;
 
-  eliminandoEstudianteId:
-    number | null = null;
+  eliminandoId: number | null = null;
 
   mensaje = '';
 
@@ -87,23 +99,29 @@ export class GestionEstudiantesComponent
   ) {}
 
   ngOnInit(): void {
-    this.cargarEstudiantes();
+    this.cargarCuentas();
   }
 
-  get estudiantesFiltrados(): Estudiante[] {
+  get listaActual(): (Estudiante | Profesor)[] {
+    return this.tipoListado === 'estudiante'
+      ? this.estudiantes
+      : this.profesores;
+  }
+
+  get listaFiltrada(): (Estudiante | Profesor)[] {
     const texto =
       this.busqueda.trim().toLowerCase();
 
     if (!texto) {
-      return this.estudiantes;
+      return this.listaActual;
     }
 
-    return this.estudiantes.filter(
-      estudiante =>
-        estudiante.nombre
+    return this.listaActual.filter(
+      cuenta =>
+        cuenta.nombre
           .toLowerCase()
           .includes(texto) ||
-        estudiante.correo
+        cuenta.correo
           .toLowerCase()
           .includes(texto)
     );
@@ -112,11 +130,15 @@ export class GestionEstudiantesComponent
   get operacionEnProceso(): boolean {
     return (
       this.creando ||
-      this.eliminandoEstudianteId !== null
+      this.eliminandoId !== null
     );
   }
 
-  cargarEstudiantes(
+  cambiarListado(tipo: TipoCuenta): void {
+    this.tipoListado = tipo;
+  }
+
+  cargarCuentas(
     mensajeExito = ''
   ): void {
     this.cargando = true;
@@ -126,12 +148,28 @@ export class GestionEstudiantesComponent
       .subscribe({
         next: (estudiantes) => {
           this.estudiantes = estudiantes;
-          this.cargando = false;
 
-          if (mensajeExito) {
-            this.tipoMensaje = 'success';
-            this.mensaje = mensajeExito;
-          }
+          this.apiService
+            .obtenerProfesores()
+            .subscribe({
+              next: (profesores) => {
+                this.profesores = profesores;
+                this.cargando = false;
+
+                if (mensajeExito) {
+                  this.tipoMensaje = 'success';
+                  this.mensaje = mensajeExito;
+                }
+              },
+              error: (error: HttpErrorResponse) => {
+                console.error(
+                  'Error al cargar profesores:',
+                  error
+                );
+
+                this.cargando = false;
+              }
+            });
         },
         error: (error: HttpErrorResponse) => {
           console.error(
@@ -144,7 +182,7 @@ export class GestionEstudiantesComponent
 
           this.mensaje =
             error.error?.error ??
-            'No se pudo cargar la lista de estudiantes.';
+            'No se pudo cargar la lista de cuentas.';
         }
       });
   }
@@ -190,42 +228,47 @@ export class GestionEstudiantesComponent
     this.creando = true;
     this.mensaje = '';
 
-    this.apiService
-      .crearEstudiante({
-        nombre,
-        correo,
-        password
-      })
-      .subscribe({
-        next: () => {
-          this.nombre = '';
-          this.correo = '';
-          this.password = '';
+    const datos = { nombre, correo, password };
 
-          this.creando = false;
+    const peticion =
+      this.tipoNuevaCuenta === 'profesor'
+        ? this.apiService.crearProfesor(datos)
+        : this.apiService.crearEstudiante(datos);
 
-          this.cargarEstudiantes(
-            'Cuenta creada correctamente.'
-          );
-        },
-        error: (error: HttpErrorResponse) => {
-          console.error(
-            'Error al crear estudiante:',
-            error
-          );
+    peticion.subscribe({
+      next: () => {
+        this.nombre = '';
+        this.correo = '';
+        this.password = '';
 
-          this.creando = false;
-          this.tipoMensaje = 'danger';
+        this.creando = false;
 
-          this.mensaje =
-            error.error?.error ??
-            'No se pudo crear la cuenta.';
-        }
-      });
+        this.tipoListado = this.tipoNuevaCuenta;
+
+        this.cargarCuentas(
+          this.tipoNuevaCuenta === 'profesor'
+            ? 'Cuenta de profesor creada correctamente.'
+            : 'Cuenta de estudiante creada correctamente.'
+        );
+      },
+      error: (error: HttpErrorResponse) => {
+        console.error(
+          'Error al crear la cuenta:',
+          error
+        );
+
+        this.creando = false;
+        this.tipoMensaje = 'danger';
+
+        this.mensaje =
+          error.error?.error ??
+          'No se pudo crear la cuenta.';
+      }
+    });
   }
 
   async confirmarEliminar(
-    estudiante: Estudiante
+    cuenta: Estudiante | Profesor
   ): Promise<void> {
     if (this.operacionEnProceso) {
       return;
@@ -235,7 +278,7 @@ export class GestionEstudiantesComponent
       await this.alertController.create({
         header: '¿Eliminar esta cuenta?',
         message:
-          `Se eliminará la cuenta de ${estudiante.nombre} y la información asociada. Esta acción no se puede deshacer.`,
+          `Se eliminará la cuenta de ${cuenta.nombre} y la información asociada. Esta acción no se puede deshacer.`,
         buttons: [
           {
             text: 'Cancelar',
@@ -245,9 +288,7 @@ export class GestionEstudiantesComponent
             text: 'Eliminar',
             role: 'destructive',
             handler: () => {
-              this.eliminarCuenta(
-                estudiante
-              );
+              this.eliminarCuenta(cuenta);
             }
           }
         ]
@@ -257,44 +298,43 @@ export class GestionEstudiantesComponent
   }
 
   eliminarCuenta(
-    estudiante: Estudiante
+    cuenta: Estudiante | Profesor
   ): void {
     if (this.operacionEnProceso) {
       return;
     }
 
-    this.eliminandoEstudianteId =
-      estudiante.id;
-
+    this.eliminandoId = cuenta.id;
     this.mensaje = '';
 
-    this.apiService
-      .eliminarEstudiante(estudiante.id)
-      .subscribe({
-        next: () => {
-          this.eliminandoEstudianteId =
-            null;
+    const peticion =
+      this.tipoListado === 'profesor'
+        ? this.apiService.eliminarProfesor(cuenta.id)
+        : this.apiService.eliminarEstudiante(cuenta.id);
 
-          this.cargarEstudiantes(
-            'Cuenta eliminada correctamente.'
-          );
-        },
-        error: (error: HttpErrorResponse) => {
-          console.error(
-            'Error al eliminar estudiante:',
-            error
-          );
+    peticion.subscribe({
+      next: () => {
+        this.eliminandoId = null;
 
-          this.eliminandoEstudianteId =
-            null;
+        this.cargarCuentas(
+          'Cuenta eliminada correctamente.'
+        );
+      },
+      error: (error: HttpErrorResponse) => {
+        console.error(
+          'Error al eliminar la cuenta:',
+          error
+        );
 
-          this.tipoMensaje = 'danger';
+        this.eliminandoId = null;
 
-          this.mensaje =
-            error.error?.error ??
-            'No se pudo eliminar la cuenta.';
-        }
-      });
+        this.tipoMensaje = 'danger';
+
+        this.mensaje =
+          error.error?.error ??
+          'No se pudo eliminar la cuenta.';
+      }
+    });
   }
 
   obtenerIniciales(
@@ -315,7 +355,10 @@ export class GestionEstudiantesComponent
   consultarAula(
     estudiante: Estudiante
   ): void {
-    if (this.operacionEnProceso) {
+    if (
+      this.operacionEnProceso ||
+      this.tipoListado !== 'estudiante'
+    ) {
       return;
     }
 

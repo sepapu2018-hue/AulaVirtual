@@ -45,7 +45,7 @@
           ">
           {{
             tarea.completada
-              ? '✓ Completada'
+              ? 'Completada'
               : 'Pendiente'
           }}
         </span>
@@ -53,7 +53,7 @@
         <span
           class="fecha"
           [class.fecha-vencida]="estaVencida()">
-          📅 {{ formatearFecha(tarea.fecha_limite) }}
+          {{ formatearFecha(tarea.fecha_limite) }}
         </span>
 
       </div>
@@ -64,10 +64,6 @@
         tarea.mi_nota.nota !== undefined
       ) {
           <div class="mi-nota">
-
-            <span class="mi-nota-icono">
-              ★
-            </span>
 
             <div>
               <strong>
@@ -107,12 +103,9 @@
     <section class="detalle-seccion">
 
       <div class="seccion-titulo">
-        <span class="seccion-icono">📎</span>
-
-        <div>
-          <h2>Archivo adjunto</h2>
-          <p>Entrega asociada a esta tarea</p>
-        </div>
+        <span class="gt-eyebrow">Entrega</span>
+        <h2>Archivo adjunto</h2>
+        <p>Entrega asociada a esta tarea</p>
       </div>
 
       @if (tarea.archivos.length > 0) {
@@ -123,10 +116,6 @@
             track archivo.id
           ) {
             <article class="archivo-item">
-
-              <span class="archivo-icono">
-                📄
-              </span>
 
               <div class="archivo-informacion">
 
@@ -205,8 +194,6 @@
             (drop)="soltarArchivo($event)"
             (click)="inputArchivo.click()">
 
-            <span class="dropzone-icono">⇧</span>
-
             <p>
               Arrastra el archivo aquí o
               <strong>selecciona uno</strong>
@@ -227,8 +214,6 @@
           <div class="archivo-pendiente">
 
             <div class="archivo-pendiente-info">
-              <span>📄</span>
-
               <strong>
                 {{ archivoSeleccionado.name }}
               </strong>
@@ -289,18 +274,15 @@
         </ion-text>
       }
 
-      @if (esAdministrador) {
+      @if (esDocente) {
         <section class="detalle-seccion">
 
           <div class="seccion-titulo">
-            <span class="seccion-icono">📋</span>
-
-            <div>
-              <h2>Registro de entregas</h2>
-              <p>
-                Revisión y calificación de estudiantes
-              </p>
-            </div>
+            <span class="gt-eyebrow">Evaluación</span>
+            <h2>Registro de entregas</h2>
+            <p>
+              Revisión y calificación de estudiantes
+            </p>
           </div>
 
           @if (cargandoRegistro) {
@@ -352,10 +334,10 @@
                       ">
 
                       @if (fila.num_archivos > 0) {
-                        ✓ Entregó
+                        Entregó
                         ({{ fila.num_archivos }})
                       } @else {
-                        ⚠ No ha entregado
+                        No ha entregado
                       }
 
                     </span>
@@ -428,12 +410,9 @@
     <section class="detalle-seccion">
 
       <div class="seccion-titulo">
-        <span class="seccion-icono">💬</span>
-
-        <div>
-          <h2>Comentarios</h2>
-          <p>Conversación sobre la tarea</p>
-        </div>
+        <span class="gt-eyebrow">Discusión</span>
+        <h2>Comentarios</h2>
+        <p>Conversación sobre la tarea</p>
       </div>
 
       @if (cargandoComentarios) {
