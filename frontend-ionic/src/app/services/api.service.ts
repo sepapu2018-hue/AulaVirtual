@@ -1,6 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpEvent, HttpHeaders, HttpInterceptorFn, HttpRequest } from '@angular/common/http';
 import { Observable } from 'rxjs';
+import { environment } from '../../environments/environment';
 
 export interface Usuario {
   id: number;
@@ -178,7 +179,7 @@ export const modoAulaInterceptor: HttpInterceptorFn = (
 
 export class ApiService {
 
-  private readonly apiUrl = 'http://localhost:3001/api';
+  private readonly apiUrl = environment.apiUrl;
 
   constructor(private http: HttpClient) {}
 

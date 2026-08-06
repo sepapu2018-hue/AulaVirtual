@@ -44,20 +44,27 @@
         </span>
       </div>
 
-      <ion-segment
-        [(ngModel)]="tipoNuevaCuenta"
-        [disabled]="creando"
-        class="segmento-tipo">
+      <div class="gt-selector">
 
-        <ion-segment-button value="estudiante">
-          <ion-label>Estudiante</ion-label>
-        </ion-segment-button>
+        <button
+          type="button"
+          class="gt-selector-boton"
+          [class.activo]="tipoNuevaCuenta === 'estudiante'"
+          [disabled]="creando"
+          (click)="tipoNuevaCuenta = 'estudiante'">
+          Estudiante
+        </button>
 
-        <ion-segment-button value="profesor">
-          <ion-label>Profesor</ion-label>
-        </ion-segment-button>
+        <button
+          type="button"
+          class="gt-selector-boton"
+          [class.activo]="tipoNuevaCuenta === 'profesor'"
+          [disabled]="creando"
+          (click)="tipoNuevaCuenta = 'profesor'">
+          Profesor
+        </button>
 
-      </ion-segment>
+      </div>
 
       <form
         class="form-estudiante"
@@ -146,23 +153,25 @@
         </span>
       </div>
 
-      <ion-segment
-        [(ngModel)]="tipoListado"
-        class="segmento-tipo">
+      <div class="gt-selector">
 
-        <ion-segment-button value="estudiante">
-          <ion-label>
-            Estudiantes ({{ estudiantes.length }})
-          </ion-label>
-        </ion-segment-button>
+        <button
+          type="button"
+          class="gt-selector-boton"
+          [class.activo]="tipoListado === 'estudiante'"
+          (click)="cambiarListado('estudiante')">
+          Estudiantes ({{ estudiantes.length }})
+        </button>
 
-        <ion-segment-button value="profesor">
-          <ion-label>
-            Profesores ({{ profesores.length }})
-          </ion-label>
-        </ion-segment-button>
+        <button
+          type="button"
+          class="gt-selector-boton"
+          [class.activo]="tipoListado === 'profesor'"
+          (click)="cambiarListado('profesor')">
+          Profesores ({{ profesores.length }})
+        </button>
 
-      </ion-segment>
+      </div>
 
       <ion-searchbar
         [(ngModel)]="busqueda"

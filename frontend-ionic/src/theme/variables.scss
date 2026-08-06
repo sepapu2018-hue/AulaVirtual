@@ -1,64 +1,69 @@
-// Paleta e identidad tipográfica de GestorTareas.
-// Mismos tonos de azul que el diseño original, refinados y consistentes
-// en toda la app a través de estas variables compartidas.
+// Paleta e identidad tipografica de GestorTareas.
+// Inspirada en el lenguaje visual de Apple: tipografia del sistema
+// (sin serif), fondos neutros claros y un unico azul de acento.
 
 :root {
-  // Tinta (azul institucional, más profundo que el original)
+  // La app está diseñada solo en modo claro.
+  color-scheme: light;
+
+  // Texto y superficies: azul institucional (igual que antes)
   --gt-ink-900: #0f2138;
   --gt-ink-800: #16304c;
   --gt-ink-700: #1e3a5f;
   --gt-ink-100: #e7edf5;
   --gt-ink-050: #f3f6fa;
 
-  // Acento cálido (usado con moderación: hero, prioridad media, foco)
-  --gt-amber-700: #a85a12;
-  --gt-amber-100: #fbf1e2;
+  // Acento (mismo azul, usado en botones y estados activos)
+  --gt-accent: #1e3a5f;
+  --gt-accent-dark: #142944;
+  --gt-amber-700: #b45309;
+  --gt-amber-100: #fdf3e2;
 
-  // Semánticos
-  --gt-success-700: #2c6b4a;
-  --gt-success-100: #eaf4ee;
+  // Semanticos
+  --gt-success-700: #1f7a3d;
+  --gt-success-100: #e7f7ec;
 
-  --gt-danger-700: #a3352c;
-  --gt-danger-100: #faeceb;
+  --gt-danger-700: #d70015;
+  --gt-danger-100: #fdecec;
 
-  --gt-info-700: #2453ad;
-  --gt-info-100: #eaf0fd;
+  --gt-info-700: #0071e3;
+  --gt-info-100: #e8f0fe;
 
-  // Neutros (tinte cálido sutil, no gris frío de plantilla)
-  --gt-paper: #f8f7f4;
+  // Neutros
+  --gt-paper: #f5f5f7;
   --gt-surface: #ffffff;
-  --gt-line: #e2e1dc;
-  --gt-line-strong: #cfcec7;
-  --gt-ink-muted: #5c6570;
-  --gt-ink-faint: #8b93a0;
-  --gt-text: #1a1f28;
+  --gt-line: #d2d2d7;
+  --gt-line-strong: #bcbcc0;
+  --gt-ink-muted: #6e6e73;
+  --gt-ink-faint: #86868b;
+  --gt-text: #1d1d1f;
 
-  // Tipografía
-  --gt-font-display: "Fraunces", "Iowan Old Style", "Georgia", serif;
-  --gt-font-body: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  // Tipografia: fuente del sistema, igual en titulos y en interfaz.
+  --gt-font-display: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  --gt-font-body: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
 
   // Overrides de la paleta de Ionic para que todos los componentes
-  // (ion-button, ion-spinner, focos, etc.) hereden el mismo azul.
-  --ion-color-primary: var(--gt-ink-700);
+  // hereden el mismo azul de acento.
+  --ion-color-primary: var(--gt-accent);
   --ion-color-primary-rgb: 30, 58, 95;
   --ion-color-primary-contrast: #ffffff;
   --ion-color-primary-contrast-rgb: 255, 255, 255;
-  --ion-color-primary-shade: var(--gt-ink-800);
+  --ion-color-primary-shade: var(--gt-accent-dark);
   --ion-color-primary-tint: #33517a;
 
   --ion-color-success: var(--gt-success-700);
-  --ion-color-success-rgb: 44, 107, 74;
+  --ion-color-success-rgb: 31, 122, 61;
   --ion-color-success-contrast: #ffffff;
   --ion-color-success-contrast-rgb: 255, 255, 255;
-  --ion-color-success-shade: #235a3e;
-  --ion-color-success-tint: #3f7d5c;
+  --ion-color-success-shade: #1b6a35;
+  --ion-color-success-tint: #358a50;
 
   --ion-color-danger: var(--gt-danger-700);
-  --ion-color-danger-rgb: 163, 53, 44;
+  --ion-color-danger-rgb: 215, 0, 21;
   --ion-color-danger-contrast: #ffffff;
   --ion-color-danger-contrast-rgb: 255, 255, 255;
-  --ion-color-danger-shade: #8c2d25;
-  --ion-color-danger-tint: #b04940;
+  --ion-color-danger-shade: #bd0013;
+  --ion-color-danger-tint: #db1a2d;
 
   --ion-font-family: var(--gt-font-body);
   --ion-background-color: var(--gt-paper);

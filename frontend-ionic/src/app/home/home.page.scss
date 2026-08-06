@@ -1,6 +1,6 @@
 :host {
-  --primary: var(--gt-ink-700);
-  --primary-dark: var(--gt-ink-900);
+  --primary: var(--gt-accent);
+  --primary-dark: var(--gt-accent-dark);
   --primary-light: var(--gt-ink-100);
   --gray-200: var(--gt-line);
   --gray-500: var(--gt-ink-muted);
@@ -14,8 +14,8 @@
 ion-content {
   --background: linear-gradient(
     155deg,
-    var(--primary) 0%,
-    var(--primary-dark) 100%
+    var(--gt-ink-800) 0%,
+    var(--gt-ink-900) 100%
   );
 
   color-scheme: light;
@@ -196,28 +196,7 @@ ion-content {
 }
 
 .login-logo {
-  display: flex;
-  align-items: center;
-  gap: 13px;
   margin-bottom: 8px;
-}
-
-.marca-sello {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-
-  width: 44px;
-  height: 44px;
-  border: 1.5px solid var(--primary);
-  border-radius: 50%;
-
-  color: var(--primary);
-  font-family: var(--gt-font-display);
-  font-size: 15px;
-  font-weight: 700;
-  letter-spacing: -0.02em;
 }
 
 .login-logo .gt-eyebrow {
@@ -255,6 +234,9 @@ ion-content {
 .campo {
   --min-height: 50px;
   --background: #ffffff;
+  --background-hover: #ffffff;
+  --background-focused: #ffffff;
+  --background-activated: #ffffff;
   --border-radius: 8px;
   --padding-start: 13px;
   --inner-padding-end: 10px;
@@ -269,7 +251,7 @@ ion-content {
 
 .campo:focus-within {
   border-color: var(--primary);
-  box-shadow: 0 0 0 3px rgba(30, 58, 95, 0.12);
+  box-shadow: 0 0 0 3px rgba(0, 113, 227, 0.15);
 }
 
 ion-input {
@@ -279,14 +261,20 @@ ion-input {
   font-size: 14px;
 }
 
-// El navegador pinta de amarillo/azul los campos autocompletados
-// (usuario/contraseña guardados); se neutraliza con este truco.
+// El navegador pinta de amarillo/azul los campos autocompletados o
+// con contraseña guardada; se neutraliza con este truco, apuntando
+// tanto al "part" expuesto por ion-input como al <input> nativo por
+// si el navegador no deja penetrar el ::part con el pseudo-estado.
 ion-input::part(native):-webkit-autofill,
 ion-input::part(native):-webkit-autofill:hover,
-ion-input::part(native):-webkit-autofill:focus {
-  -webkit-text-fill-color: var(--gray-900);
-  -webkit-box-shadow: 0 0 0 1000px #ffffff inset;
-  box-shadow: 0 0 0 1000px #ffffff inset;
+ion-input::part(native):-webkit-autofill:focus,
+ion-input input:-webkit-autofill,
+ion-input input:-webkit-autofill:hover,
+ion-input input:-webkit-autofill:focus {
+  -webkit-text-fill-color: var(--gray-900) !important;
+  -webkit-box-shadow: 0 0 0 1000px #ffffff inset !important;
+  box-shadow: 0 0 0 1000px #ffffff inset !important;
+  background-color: #ffffff !important;
   caret-color: var(--gray-900);
   transition: background-color 9999s ease-in-out 0s;
 }

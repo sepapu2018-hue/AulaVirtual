@@ -34,12 +34,19 @@
 
 /* @import "@ionic/angular/css/palettes/dark.always.css"; */
 /* @import "@ionic/angular/css/palettes/dark.class.css"; */
-@import '@ionic/angular/css/palettes/dark.system.css';
+/*
+ * Esta app está diseñada solo en modo claro (los colores no están
+ * pensados para modo oscuro). No se importa dark.system.css porque
+ * activaba automáticamente estilos oscuros en overlays (action-sheet,
+ * alertas, popovers) cuando el sistema operativo está en modo oscuro,
+ * dejándolos casi sin estilo y en negro.
+ */
 
 /*
- * Identidad tipográfica de GestorTareas: un serif con carácter para
- * títulos (Fraunces) y un sans-serif limpio para interfaz y texto
- * (Inter). Ver src/theme/variables.scss para la paleta de color.
+ * Identidad tipográfica de GestorTareas: la fuente del sistema
+ * (San Francisco en Apple, Segoe UI en Windows) tanto en títulos
+ * como en el resto de la interfaz. Ver src/theme/variables.scss
+ * para la paleta de color.
  */
 body,
 ion-app {
@@ -52,7 +59,7 @@ h3,
 .gt-display {
   font-family: var(--gt-font-display);
   font-weight: 600;
-  letter-spacing: -0.01em;
+  letter-spacing: -0.02em;
 }
 
 /* Etiqueta corta en versalitas: reemplaza a los iconos decorativos
@@ -138,4 +145,96 @@ ion-button {
   width: 1px;
   height: 14px;
   background: var(--gt-line-strong);
+}
+
+/*
+ * Selector de dos opciones (p. ej. Estudiante / Profesor) como
+ * botones simples en vez de ion-segment: evita depender del cálculo
+ * interno del indicador deslizante de Ionic, que a veces tarda en
+ * asentarse dentro de un modal recién abierto.
+ */
+.gt-selector {
+  display: flex;
+  gap: 6px;
+  padding: 4px;
+  border-radius: 11px;
+  background: var(--gt-paper);
+  border: 1px solid var(--gt-line);
+}
+
+.gt-selector-boton {
+  flex: 1;
+  padding: 9px 12px;
+  border: 0;
+  border-radius: 8px;
+
+  background: transparent;
+  color: var(--gt-ink-muted);
+
+  font-family: inherit;
+  font-size: 12.5px;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  text-align: center;
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.gt-selector-boton.activo {
+  background: #ffffff;
+  color: var(--gt-ink-700);
+  box-shadow: 0 1px 3px rgba(16, 24, 32, 0.15);
+}
+
+.gt-selector-boton:disabled {
+  opacity: 0.55;
+  cursor: default;
+}
+
+/*
+ * Alertas de confirmación (ion-alert): Ionic las dibuja con el
+ * estilo Material por defecto (mayúsculas, esquinas cuadradas). Se
+ * ajustan para que combinen con el resto de la app.
+ */
+ion-alert {
+  --background: #ffffff;
+  --border-radius: 14px;
+  --backdrop-opacity: 0.35;
+
+  color-scheme: light;
+}
+
+ion-alert::part(header) {
+  color: var(--gt-text);
+  font-family: var(--gt-font-display);
+  font-size: 17px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+
+ion-alert::part(message) {
+  color: var(--gt-ink-muted);
+  font-size: 14px;
+  line-height: 1.5;
+  margin-top: 6px;
+}
+
+ion-alert::part(button) {
+  font-weight: 700;
+  font-size: 14px;
+  text-transform: none !important;
+  letter-spacing: 0;
+}
+
+ion-action-sheet {
+  --background: #ffffff;
+  --backdrop-opacity: 0.35;
+
+  color-scheme: light;
+}
+
+ion-action-sheet::part(button) {
+  font-weight: 600;
+  text-transform: none;
 }
