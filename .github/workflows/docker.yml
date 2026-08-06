@@ -28,7 +28,7 @@ jobs:
         run: docker push jsnarvaezl/gestortareas-backend:latest
 
       - name: Construir imagen frontend
-        run: docker build -t jsnarvaezl/gestortareas-frontend:latest ./frontend
+        run: docker build -t jsnarvaezl/gestortareas-frontend:latest ./frontend-ionic
 
       - name: Subir imagen frontend
         run: docker push jsnarvaezl/gestortareas-frontend:latest
@@ -36,7 +36,7 @@ jobs:
       - name: Desplegar en EC2
         uses: appleboy/ssh-action@v1.2.0
         with:
-          host: 18.188.111.131
+          host: 3.16.0.27
           username: ubuntu
           key: ${{ secrets.EC2_SSH_KEY }}
           script: |

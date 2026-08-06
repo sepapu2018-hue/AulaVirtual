@@ -1,0 +1,310 @@
+<ion-header>
+  <ion-toolbar>
+
+    <ion-title>
+      Gestionar cuentas
+    </ion-title>
+
+    <ion-buttons slot="end">
+      <ion-button
+        type="button"
+        [disabled]="operacionEnProceso"
+        (click)="cerrar()">
+        Cerrar
+      </ion-button>
+    </ion-buttons>
+
+  </ion-toolbar>
+</ion-header>
+
+<ion-content>
+
+  <div class="gestion-contenedor">
+
+    <section class="presentacion">
+
+      <span class="gt-eyebrow">Cuentas</span>
+
+      <h1>Profesores y estudiantes</h1>
+
+      <p>
+        Crea una cuenta con correo y
+        contraseña para cada profesor o estudiante.
+      </p>
+
+    </section>
+
+    <section class="panel-crear">
+
+      <div class="panel-titulo">
+        <h2>Nueva cuenta</h2>
+
+        <span>
+          Acceso al aula virtual
+        </span>
+      </div>
+
+      <div class="gt-selector">
+
+        <button
+          type="button"
+          class="gt-selector-boton"
+          [class.activo]="tipoNuevaCuenta === 'estudiante'"
+          [disabled]="creando"
+          (click)="tipoNuevaCuenta = 'estudiante'">
+          Estudiante
+        </button>
+
+        <button
+          type="button"
+          class="gt-selector-boton"
+          [class.activo]="tipoNuevaCuenta === 'profesor'"
+          [disabled]="creando"
+          (click)="tipoNuevaCuenta = 'profesor'">
+          Profesor
+        </button>
+
+      </div>
+
+      <form
+        class="form-estudiante"
+        (ngSubmit)="crearCuenta()">
+
+        <div class="campos-dobles">
+
+          <div class="campo">
+            <label>Nombre</label>
+
+            <ion-input
+              name="nombre"
+              [(ngModel)]="nombre"
+              fill="outline"
+              placeholder="Nombre completo"
+              autocomplete="name"
+              maxlength="100"
+              [disabled]="creando">
+            </ion-input>
+          </div>
+
+          <div class="campo">
+            <label>Correo</label>
+
+            <ion-input
+              name="correo"
+              [(ngModel)]="correo"
+              type="email"
+              fill="outline"
+              placeholder="correo@correo.com"
+              autocomplete="email"
+              maxlength="150"
+              [disabled]="creando">
+            </ion-input>
+          </div>
+
+        </div>
+
+        <div class="campo">
+          <label>Contraseña temporal</label>
+
+          <ion-input
+            name="password"
+            [(ngModel)]="password"
+            type="password"
+            fill="outline"
+            placeholder="Mínimo 6 caracteres"
+            autocomplete="new-password"
+            maxlength="100"
+            [disabled]="creando">
+          </ion-input>
+        </div>
+
+        <ion-button
+          type="submit"
+          expand="block"
+          class="boton-crear"
+          [disabled]="creando">
+
+          @if (creando) {
+            <ion-spinner name="crescent">
+            </ion-spinner>
+
+            <span>Creando cuenta...</span>
+          } @else {
+            {{
+              tipoNuevaCuenta === 'profesor'
+                ? 'Crear cuenta de profesor'
+                : 'Crear cuenta de estudiante'
+            }}
+          }
+
+        </ion-button>
+
+      </form>
+
+    </section>
+
+    <section class="panel-lista">
+
+      <div class="panel-titulo">
+        <h2>Cuentas registradas</h2>
+
+        <span>
+          {{ listaActual.length }}
+        </span>
+      </div>
+
+      <div class="gt-selector">
+
+        <button
+          type="button"
+          class="gt-selector-boton"
+          [class.activo]="tipoListado === 'estudiante'"
+          (click)="cambiarListado('estudiante')">
+          Estudiantes ({{ estudiantes.length }})
+        </button>
+
+        <button
+          type="button"
+          class="gt-selector-boton"
+          [class.activo]="tipoListado === 'profesor'"
+          (click)="cambiarListado('profesor')">
+          Profesores ({{ profesores.length }})
+        </button>
+
+      </div>
+
+      <ion-searchbar
+        [(ngModel)]="busqueda"
+        placeholder="Buscar por nombre o correo"
+        [debounce]="200"
+        [disabled]="cargando"
+        class="buscador-estudiantes">
+      </ion-searchbar>
+
+      @if (cargando) {
+        <div class="estado-cargando">
+
+          <ion-spinner name="crescent">
+          </ion-spinner>
+
+          <span>
+            Cargando cuentas...
+          </span>
+
+        </div>
+      }
+
+      @if (
+        !cargando &&
+        listaActual.length === 0
+      ) {
+        <div class="estado-vacio">
+          @if (tipoListado === 'profesor') {
+            Todavía no existen cuentas de profesores.
+          } @else {
+            Todavía no existen cuentas de estudiantes.
+          }
+        </div>
+      }
+
+      @if (
+        !cargando &&
+        listaActual.length > 0 &&
+        listaFiltrada.length === 0
+      ) {
+        <div class="estado-vacio">
+          Ninguna cuenta coincide con
+          la búsqueda.
+        </div>
+      }
+
+      @if (
+        !cargando &&
+        listaFiltrada.length > 0
+      ) {
+        <div class="lista-estudiantes">
+
+          @for (
+            cuenta of listaFiltrada;
+            track cuenta.id
+          ) {
+            <article class="estudiante-fila">
+
+              <span class="estudiante-avatar">
+                {{
+                  obtenerIniciales(
+                    cuenta.nombre
+                  )
+                }}
+              </span>
+
+              <div class="estudiante-info">
+
+                <strong>
+                  {{ cuenta.nombre }}
+                </strong>
+
+                <span>
+                  {{ cuenta.correo }}
+                </span>
+
+              </div>
+
+              <div class="estudiante-acciones">
+
+                @if (tipoListado === 'estudiante') {
+                  <ion-button
+                    type="button"
+                    size="small"
+                    fill="clear"
+                    class="boton-texto"
+                    [disabled]="operacionEnProceso"
+                    (click)="consultarAula(cuenta)">
+
+                    Ver aula
+
+                  </ion-button>
+
+                  <span class="separador-acciones" aria-hidden="true"></span>
+                }
+
+                <ion-button
+                  type="button"
+                  size="small"
+                  fill="clear"
+                  class="boton-texto boton-texto-danger"
+                  [disabled]="operacionEnProceso"
+                  (click)="confirmarEliminar(cuenta)">
+
+                  @if (
+                    eliminandoId ===
+                    cuenta.id
+                  ) {
+                    <ion-spinner name="crescent"></ion-spinner>
+                  } @else {
+                    Eliminar
+                  }
+
+                </ion-button>
+
+              </div>
+
+            </article>
+          }
+
+        </div>
+      }
+
+    </section>
+
+    @if (mensaje) {
+      <ion-text [color]="tipoMensaje">
+        <p class="mensaje">
+          {{ mensaje }}
+        </p>
+      </ion-text>
+    }
+
+  </div>
+
+</ion-content>

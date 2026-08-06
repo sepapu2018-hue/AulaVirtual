@@ -1,0 +1,140 @@
+<ion-header>
+  <ion-toolbar>
+
+    <ion-title>
+      {{ editando ? 'Editar materia' : 'Nueva materia' }}
+    </ion-title>
+
+    <ion-buttons slot="end">
+      <ion-button
+        type="button"
+        [disabled]="guardando"
+        (click)="cancelar()">
+        Cerrar
+      </ion-button>
+    </ion-buttons>
+
+  </ion-toolbar>
+</ion-header>
+
+<ion-content>
+
+  <div class="formulario-contenedor">
+
+    <div class="formulario-presentacion">
+      <span class="gt-eyebrow">
+        {{ editando ? 'Editar' : 'Nueva materia' }}
+      </span>
+
+      <h1>
+        {{
+          editando
+            ? 'Modificar materia'
+            : 'Agregar materia'
+        }}
+      </h1>
+
+      <p>
+        {{
+          editando
+            ? 'Actualiza el nombre y el profesor.'
+            : 'Registra una nueva materia en el aula.'
+        }}
+      </p>
+    </div>
+
+    <form
+      class="materia-formulario"
+      (ngSubmit)="guardar()">
+
+      <div class="campo">
+        <label>Nombre de la materia</label>
+
+        <ion-input
+          name="nombre"
+          [(ngModel)]="nombre"
+          fill="outline"
+          placeholder="Ej: Arquitectura de Software"
+          maxlength="100"
+          [disabled]="guardando">
+        </ion-input>
+      </div>
+
+      <div class="campo">
+        <label>Profesor</label>
+
+        <ion-select
+          name="profesorId"
+          [(ngModel)]="profesorId"
+          fill="outline"
+          placeholder="Selecciona un profesor"
+          interface="action-sheet"
+          cancelText="Cancelar"
+          [disabled]="guardando">
+
+          @for (docente of profesores; track docente.id) {
+            <ion-select-option [value]="docente.id">
+              {{ docente.nombre }}
+            </ion-select-option>
+          }
+
+        </ion-select>
+
+        @if (profesores.length === 0) {
+          <small>
+            Todavía no hay profesores registrados. Crea una cuenta de profesor primero.
+          </small>
+        }
+      </div>
+
+      @if (mensajeError) {
+        <p class="mensaje-error">
+          {{ mensajeError }}
+        </p>
+      }
+
+      <div class="botones">
+
+        <ion-button
+          type="button"
+          expand="block"
+          class="boton-cancelar"
+          [disabled]="guardando"
+          (click)="cancelar()">
+          Cancelar
+        </ion-button>
+
+        <ion-button
+          type="submit"
+          expand="block"
+          class="boton-guardar"
+          [disabled]="guardando">
+
+          @if (guardando) {
+            <ion-spinner name="crescent">
+            </ion-spinner>
+
+            <span>
+              {{
+                editando
+                  ? 'Actualizando...'
+                  : 'Guardando...'
+              }}
+            </span>
+          } @else {
+            {{
+              editando
+                ? 'Actualizar materia'
+                : 'Crear materia'
+            }}
+          }
+
+        </ion-button>
+
+      </div>
+
+    </form>
+
+  </div>
+
+</ion-content>

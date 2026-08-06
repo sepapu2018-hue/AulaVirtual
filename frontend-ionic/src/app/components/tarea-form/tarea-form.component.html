@@ -1,0 +1,194 @@
+<ion-header class="modal-header">
+  <ion-toolbar class="modal-toolbar">
+
+    <ion-buttons slot="start">
+      <ion-button
+        class="boton-cerrar"
+        (click)="cancelar()">
+        Cancelar
+      </ion-button>
+    </ion-buttons>
+
+    <ion-title>
+      {{ editando ? 'Editar tarea' : 'Nueva tarea' }}
+    </ion-title>
+
+  </ion-toolbar>
+</ion-header>
+
+<ion-content>
+
+  <div class="formulario-contenedor">
+
+    <div class="formulario-encabezado">
+
+      <span class="gt-eyebrow">
+        {{ editando ? 'Editar deber' : 'Nuevo deber' }}
+      </span>
+
+      <h2>
+        {{ editando ? 'Modificar la tarea' : 'Agregar una tarea' }}
+      </h2>
+
+      <p>
+        @if (editando) {
+          Actualiza la información de este deber.
+        } @else {
+          Registra un nuevo deber para esta materia.
+        }
+      </p>
+
+    </div>
+
+    <form
+      class="tarea-formulario"
+      (ngSubmit)="guardar()">
+
+      <div class="campo-grupo">
+
+        <ion-input
+          label="Título"
+          labelPlacement="stacked"
+          fill="outline"
+          type="text"
+          name="titulo"
+          [(ngModel)]="titulo"
+          placeholder="Ej: Terminar el informe"
+          autocomplete="off"
+          maxlength="120"
+          [counter]="true">
+        </ion-input>
+
+      </div>
+
+      <div class="campo-grupo">
+
+        <ion-textarea
+          label="Descripción"
+          labelPlacement="stacked"
+          fill="outline"
+          name="descripcion"
+          [(ngModel)]="descripcion"
+          placeholder="Detalles de la tarea (opcional)"
+          rows="4"
+          maxlength="500"
+          [counter]="true"
+          [autoGrow]="true">
+        </ion-textarea>
+
+      </div>
+
+      <div class="fila-doble">
+
+        <div class="campo-grupo">
+
+          <ion-select
+            label="Prioridad"
+            labelPlacement="stacked"
+            fill="outline"
+            name="prioridad"
+            [(ngModel)]="prioridad"
+            interface="action-sheet"
+            cancelText="Cancelar">
+
+            <ion-select-option value="alta">
+              Alta
+            </ion-select-option>
+
+            <ion-select-option value="media">
+              Media
+            </ion-select-option>
+
+            <ion-select-option value="baja">
+              Baja
+            </ion-select-option>
+
+          </ion-select>
+
+        </div>
+
+        <div class="campo-grupo">
+
+          <ion-input
+            label="Fecha límite"
+            labelPlacement="stacked"
+            fill="outline"
+            type="date"
+            name="fechaLimite"
+            [(ngModel)]="fechaLimite">
+          </ion-input>
+
+        </div>
+
+      </div>
+
+      <div class="prioridad-preview">
+
+        <span>Prioridad seleccionada:</span>
+
+        <strong
+          [class.prioridad-alta]="
+            prioridad === 'alta'
+          "
+          [class.prioridad-media]="
+            prioridad === 'media'
+          "
+          [class.prioridad-baja]="
+            prioridad === 'baja'
+          ">
+
+          {{
+            prioridad === 'alta'
+              ? 'Alta'
+              : prioridad === 'media'
+                ? 'Media'
+                : 'Baja'
+          }}
+
+        </strong>
+
+      </div>
+
+      @if (mensajeError) {
+        <p class="mensaje-error">
+          {{ mensajeError }}
+        </p>
+      }
+
+      <div class="botones">
+
+        <ion-button
+          type="button"
+          expand="block"
+          fill="solid"
+          class="boton-cancelar"
+          [disabled]="guardando"
+          (click)="cancelar()">
+          Cancelar
+        </ion-button>
+
+        <ion-button
+          type="submit"
+          expand="block"
+          class="boton-guardar"
+          [disabled]="guardando">
+
+          @if (guardando) {
+            <ion-spinner name="crescent"></ion-spinner>
+
+            <span>
+              {{ editando ? 'Actualizando...' : 'Guardando...' }}
+            </span>
+          } @else {
+            {{ editando ? 'Actualizar tarea' : 'Agregar tarea' }}
+          }
+
+        </ion-button>
+
+      </div>
+
+    </form>
+
+  </div>
+
+</ion-content>

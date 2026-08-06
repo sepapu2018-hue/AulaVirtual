@@ -1,0 +1,342 @@
+<ion-header>
+  <ion-toolbar class="barra-superior">
+    <div class="barra-contenido">
+
+      <div class="marca">
+        <span>GestorTareas</span>
+      </div>
+
+      <div class="sesion">
+        <span class="avatar">
+          {{ obtenerIniciales() }}
+        </span>
+
+        <div class="datos-usuario">
+          <strong>
+            {{ usuario?.nombre || 'Usuario' }}
+          </strong>
+
+          <span>
+            {{ fechaActual }}
+          </span>
+        </div>
+
+        <ion-button
+          fill="clear"
+          size="small"
+          class="boton-salir"
+          (click)="cerrarSesion()">
+          Salir
+        </ion-button>
+      </div>
+
+    </div>
+  </ion-toolbar>
+</ion-header>
+
+@if (modoAula) {
+  <section class="modo-aula-banner">
+
+    <span class="gt-eyebrow modo-aula-etiqueta">
+      Modo aula
+    </span>
+
+    <span>
+      Viendo el aula de
+      <strong>{{ modoAula.nombre }}</strong>
+      · modo administrador
+    </span>
+
+    <button
+      type="button"
+      (click)="salirModoAula()">
+      Salir
+    </button>
+
+  </section>
+}
+
+<ion-content>
+
+  <section class="hero">
+    <div class="hero-contenido">
+      <h1>Mis Materias</h1>
+
+      <p>
+        Selecciona una materia para ver y gestionar
+        sus deberes
+      </p>
+
+      <div class="resumen">
+
+        <div class="resumen-item">
+          <strong class="gt-num">{{ estadisticas.total }}</strong>
+          <span>Tareas totales</span>
+        </div>
+
+        <div class="resumen-item">
+          <strong class="gt-num">{{ estadisticas.pendientes }}</strong>
+          <span>Pendientes</span>
+        </div>
+
+        <div class="resumen-item resumen-alerta">
+          <strong class="gt-num">{{ estadisticas.vencidas }}</strong>
+          <span>Atrasadas</span>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <main class="contenido">
+
+    <ion-searchbar
+      [(ngModel)]="textoBusqueda"
+      placeholder="Buscar materia..."
+      animated="true"
+      showClearButton="focus"
+      class="buscador">
+    </ion-searchbar>
+
+    @if (esAdministrador) {
+      <ion-button
+        type="button"
+        class="boton-nueva-materia"
+        (click)="abrirNuevaMateria()">
+
+        Nueva materia
+
+      </ion-button>
+    }
+
+    @if (esAdministrador) {
+      <ion-button
+        type="button"
+        fill="outline"
+        class="boton-gestionar-estudiantes"
+        (click)="abrirGestionEstudiantes()">
+
+        Gestionar cuentas
+
+      </ion-button>
+    }
+
+    @if (cargando) {
+      <div class="estado">
+        <ion-spinner name="crescent"></ion-spinner>
+        <p>Cargando materias...</p>
+      </div>
+    }
+
+    @if (!cargando && mensajeError) {
+      <div class="estado">
+        <ion-text color="danger">
+          <p>{{ mensajeError }}</p>
+        </ion-text>
+
+        <ion-button
+          fill="outline"
+          (click)="cargarDatos()">
+          Reintentar
+        </ion-button>
+      </div>
+    }
+
+    @if (
+      !cargando &&
+      !mensajeError &&
+      materiasFiltradas.length === 0
+    ) {
+      <div class="estado">
+        <h2>No hay materias</h2>
+
+        <p>
+          @if (materias.length === 0) {
+            Todavía no tienes materias registradas.
+          } @else {
+            No existen materias que coincidan
+            con la búsqueda.
+          }
+        </p>
+      </div>
+    }
+
+    @if (
+      !cargando &&
+      !mensajeError &&
+      materiasFiltradas.length > 0
+    ) {
+      <div class="materias-grid">
+
+        @for (
+          materia of materiasFiltradas;
+          track materia.id
+        ) {
+          <ion-card class="materia-card">
+
+            <ion-card-content class="materia-body">
+
+              <div class="materia-cabecera">
+                <h2>{{ materia.nombre }}</h2>
+
+                <p class="profesor">
+                  {{ materia.profesor || 'Profesor sin asignar' }}
+                </p>
+              </div>
+
+              <div class="estadisticas-materia">
+
+                <div>
+                  <strong>{{ materia.total }}</strong>
+                  <span>Total</span>
+                </div>
+
+                <div>
+                  <strong>{{ materia.pendientes }}</strong>
+                  <span>Pendientes</span>
+                </div>
+
+                <div>
+                  <strong>{{ materia.completadas }}</strong>
+                  <span>Listas</span>
+                </div>
+
+              </div>
+
+              <div class="progreso-cabecera">
+                <span>Progreso</span>
+
+                <strong>
+                  {{ obtenerPorcentaje(materia) }}%
+                </strong>
+              </div>
+
+              <ion-progress-bar
+                [value]="obtenerProgreso(materia)">
+              </ion-progress-bar>
+
+              <div class="acciones-materia">
+
+                <ion-button
+                  expand="block"
+                  fill="outline"
+                  class="boton-ver-materia"
+                  (click)="abrirMateria(materia)">
+                  Ver materia
+                </ion-button>
+
+                @if (esAdministrador) {
+                  <div class="acciones-admin-materia">
+
+                    <ion-button
+                      type="button"
+                      size="small"
+                      fill="clear"
+                      class="boton-texto"
+                      [disabled]="
+                        eliminandoMateriaId === materia.id
+                      "
+                      (click)="
+                        abrirEditarMateria(
+                          materia,
+                          $event
+                        )
+                      ">
+
+                      Editar
+
+                    </ion-button>
+
+                    <span class="separador-acciones" aria-hidden="true"></span>
+
+                    <ion-button
+                      type="button"
+                      size="small"
+                      fill="clear"
+                      class="boton-texto boton-texto-danger"
+                      [disabled]="
+                        eliminandoMateriaId === materia.id
+                      "
+                      (click)="
+                        solicitarEliminarMateria(
+                          materia,
+                          $event
+                        )
+                      ">
+
+                      @if (
+                        eliminandoMateriaId === materia.id
+                      ) {
+                        Eliminando...
+                      } @else {
+                        Eliminar
+                      }
+
+                    </ion-button>
+
+                  </div>
+                }
+
+              </div>
+
+
+            </ion-card-content>
+
+          </ion-card>
+        }
+
+      </div>
+    }
+
+  </main>
+
+</ion-content>
+
+<ion-modal
+  class="materia-form-modal"
+  [isOpen]="mostrarFormularioMateria"
+  [backdropDismiss]="!guardandoMateria"
+  (didDismiss)="cerrarFormularioMateria()">
+
+  <ng-template>
+
+    <app-materia-form
+      [materia]="materiaEnEdicion"
+      [profesores]="profesores"
+      [guardando]="guardandoMateria"
+      (cancelarFormulario)="
+        cerrarFormularioMateria()
+      "
+      (enviarFormulario)="
+        guardarMateria($event)
+      ">
+    </app-materia-form>
+
+  </ng-template>
+
+</ion-modal>
+
+<ion-toast
+  [isOpen]="toastAbierto"
+  [message]="toastMensaje"
+  [color]="toastColor"
+  [duration]="2500"
+  position="bottom"
+  (didDismiss)="toastAbierto = false">
+</ion-toast>
+
+<ion-modal
+  class="gestion-estudiantes-modal"
+  [isOpen]="mostrarGestionEstudiantes"
+  (didDismiss)="cerrarGestionEstudiantes()">
+
+  <ng-template>
+
+    <app-gestion-estudiantes
+      (cerrarModal)="cerrarGestionEstudiantes()"
+      (aulaSeleccionada)="entrarModoAula($event)">
+    </app-gestion-estudiantes>
+
+  </ng-template>
+
+</ion-modal>
