@@ -1,0 +1,324 @@
+{
+  "info": {
+    "name": "GestorTareas (AulaVirtual) API",
+    "description": "Colección de la API del backend de GestorTareas. Ver backend/docs/API.md para el detalle completo de cada endpoint.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "auth": {
+    "type": "bearer",
+    "bearer": [{ "key": "token", "value": "{{token}}", "type": "string" }]
+  },
+  "variable": [
+    { "key": "baseUrl", "value": "http://localhost:3001/api" },
+    { "key": "token", "value": "" },
+    { "key": "materiaId", "value": "" },
+    { "key": "tareaId", "value": "" },
+    { "key": "usuarioId", "value": "" }
+  ],
+  "item": [
+    {
+      "name": "Autenticación",
+      "item": [
+        {
+          "name": "Login",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    pm.collectionVariables.set('token', pm.response.json().token);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{baseUrl}}/auth/login",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"correo\": \"admin@gestortareas.com\",\n  \"password\": \"admin123\"\n}"
+            },
+            "auth": { "type": "noauth" }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Materias",
+      "item": [
+        {
+          "name": "Listar materias",
+          "request": { "method": "GET", "url": "{{baseUrl}}/materias" }
+        },
+        {
+          "name": "Ver aula de un estudiante (admin, ?como=)",
+          "request": { "method": "GET", "url": "{{baseUrl}}/materias?como={{usuarioId}}" }
+        },
+        {
+          "name": "Crear materia",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{baseUrl}}/materias",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"Arquitectura de Software\",\n  \"profesor_id\": {{usuarioId}}\n}"
+            }
+          }
+        },
+        {
+          "name": "Editar materia",
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{baseUrl}}/materias/{{materiaId}}",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"Arquitectura de Software II\",\n  \"profesor_id\": {{usuarioId}}\n}"
+            }
+          }
+        },
+        {
+          "name": "Reordenar materias",
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{baseUrl}}/materias/reordenar",
+            "body": { "mode": "raw", "raw": "{\n  \"orden\": [1, 2, 3]\n}" }
+          }
+        },
+        {
+          "name": "Eliminar materia",
+          "request": { "method": "DELETE", "url": "{{baseUrl}}/materias/{{materiaId}}" }
+        },
+        {
+          "name": "Listar estudiantes inscritos",
+          "request": { "method": "GET", "url": "{{baseUrl}}/materias/{{materiaId}}/estudiantes" }
+        },
+        {
+          "name": "Inscribir estudiante",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{baseUrl}}/materias/{{materiaId}}/estudiantes",
+            "body": { "mode": "raw", "raw": "{\n  \"usuario_id\": {{usuarioId}}\n}" }
+          }
+        },
+        {
+          "name": "Retirar estudiante",
+          "request": { "method": "DELETE", "url": "{{baseUrl}}/materias/{{materiaId}}/estudiantes/{{usuarioId}}" }
+        }
+      ]
+    },
+    {
+      "name": "Anuncios",
+      "item": [
+        {
+          "name": "Listar anuncios de una materia",
+          "request": { "method": "GET", "url": "{{baseUrl}}/materias/{{materiaId}}/anuncios" }
+        },
+        {
+          "name": "Publicar anuncio",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{baseUrl}}/materias/{{materiaId}}/anuncios",
+            "body": { "mode": "raw", "raw": "{\n  \"contenido\": \"Bienvenidos al aula virtual\"\n}" }
+          }
+        },
+        {
+          "name": "Eliminar anuncio",
+          "request": { "method": "DELETE", "url": "{{baseUrl}}/anuncios/1" }
+        }
+      ]
+    },
+    {
+      "name": "Tareas",
+      "item": [
+        {
+          "name": "Listar tareas",
+          "request": { "method": "GET", "url": "{{baseUrl}}/tareas?materia_id={{materiaId}}" }
+        },
+        {
+          "name": "Estadísticas de tareas",
+          "request": { "method": "GET", "url": "{{baseUrl}}/tareas/estadisticas" }
+        },
+        {
+          "name": "Detalle de tarea",
+          "request": { "method": "GET", "url": "{{baseUrl}}/tareas/{{tareaId}}" }
+        },
+        {
+          "name": "Crear tarea",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "    pm.collectionVariables.set('tareaId', pm.response.json().id);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{baseUrl}}/tareas",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"titulo\": \"Preparar presentación\",\n  \"descripcion\": \"Repasar el guion de la demo\",\n  \"prioridad\": \"alta\",\n  \"fecha_limite\": \"2026-12-01\",\n  \"materia_id\": {{materiaId}}\n}"
+            }
+          }
+        },
+        {
+          "name": "Editar tarea",
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{baseUrl}}/tareas/{{tareaId}}",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"titulo\": \"Preparar presentación final\",\n  \"descripcion\": \"...\",\n  \"prioridad\": \"alta\",\n  \"fecha_limite\": \"2026-12-05\",\n  \"completada\": false,\n  \"materia_id\": {{materiaId}}\n}"
+            }
+          }
+        },
+        {
+          "name": "Eliminar tareas completadas",
+          "request": { "method": "DELETE", "url": "{{baseUrl}}/tareas/completadas?materia_id={{materiaId}}" }
+        },
+        {
+          "name": "Eliminar tarea",
+          "request": { "method": "DELETE", "url": "{{baseUrl}}/tareas/{{tareaId}}" }
+        },
+        {
+          "name": "Registro de entregas",
+          "request": { "method": "GET", "url": "{{baseUrl}}/tareas/{{tareaId}}/registro" }
+        },
+        {
+          "name": "Calificar entrega",
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{baseUrl}}/tareas/{{tareaId}}/notas",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"usuario_id\": {{usuarioId}},\n  \"nota\": 8.5,\n  \"comentario\": \"Buen trabajo\"\n}"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Comentarios",
+      "item": [
+        {
+          "name": "Listar comentarios de una tarea",
+          "request": { "method": "GET", "url": "{{baseUrl}}/tareas/{{tareaId}}/comentarios" }
+        },
+        {
+          "name": "Publicar comentario",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{baseUrl}}/tareas/{{tareaId}}/comentarios",
+            "body": { "mode": "raw", "raw": "{\n  \"contenido\": \"¿Hasta qué hora se puede entregar?\"\n}" }
+          }
+        },
+        {
+          "name": "Eliminar comentario",
+          "request": { "method": "DELETE", "url": "{{baseUrl}}/comentarios/1" }
+        }
+      ]
+    },
+    {
+      "name": "Archivos",
+      "item": [
+        {
+          "name": "Listar archivos de una tarea",
+          "request": { "method": "GET", "url": "{{baseUrl}}/tareas/{{tareaId}}/archivos" }
+        },
+        {
+          "name": "Subir archivo (entrega)",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/tareas/{{tareaId}}/archivo",
+            "body": {
+              "mode": "formdata",
+              "formdata": [{ "key": "archivo", "type": "file", "src": [] }]
+            }
+          }
+        },
+        {
+          "name": "Quitar archivo",
+          "request": { "method": "DELETE", "url": "{{baseUrl}}/tareas/{{tareaId}}/archivo/1" }
+        },
+        {
+          "name": "Descargar archivo (público, sin token)",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/archivos/nombre-generado.pdf",
+            "auth": { "type": "noauth" }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Usuarios",
+      "item": [
+        {
+          "name": "Listar estudiantes",
+          "request": { "method": "GET", "url": "{{baseUrl}}/usuarios?rol=estudiante" }
+        },
+        {
+          "name": "Listar profesores",
+          "request": { "method": "GET", "url": "{{baseUrl}}/usuarios?rol=profesor" }
+        },
+        {
+          "name": "Listar administradores",
+          "request": { "method": "GET", "url": "{{baseUrl}}/usuarios?rol=admin" }
+        },
+        {
+          "name": "Crear cuenta",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "    pm.collectionVariables.set('usuarioId', pm.response.json().id);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{baseUrl}}/usuarios",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"Ana Pérez\",\n  \"correo\": \"ana@ejemplo.com\",\n  \"password\": \"clave1234\",\n  \"rol\": \"estudiante\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Eliminar cuenta",
+          "request": { "method": "DELETE", "url": "{{baseUrl}}/usuarios/{{usuarioId}}" }
+        }
+      ]
+    },
+    {
+      "name": "Administración",
+      "item": [
+        {
+          "name": "Estadísticas del panel de administración",
+          "request": { "method": "GET", "url": "{{baseUrl}}/admin/estadisticas" }
+        }
+      ]
+    }
+  ]
+}

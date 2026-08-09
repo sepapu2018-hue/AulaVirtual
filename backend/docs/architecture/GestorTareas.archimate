@@ -1,0 +1,139 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<archimate:model xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:archimate="http://www.archimatetool.com/archimate" name="GestorTareas (AulaVirtual)" id="id-model-gestortareas" version="5.0.0">
+  <folder name="Business" id="id-folder-business" type="business">
+    <element xsi:type="archimate:BusinessActor" name="Administrador" id="el-admin"/>
+    <element xsi:type="archimate:BusinessActor" name="Profesor" id="el-profesor"/>
+    <element xsi:type="archimate:BusinessActor" name="Estudiante" id="el-estudiante"/>
+  </folder>
+  <folder name="Application" id="id-folder-application" type="application">
+    <element xsi:type="archimate:ApplicationComponent" name="Frontend Ionic" id="el-app-frontend"/>
+    <element xsi:type="archimate:ApplicationService" name="Servicio API REST" id="el-appsvc-api"/>
+    <element xsi:type="archimate:ApplicationComponent" name="Capa de Rutas (routes)" id="el-app-routes"/>
+    <element xsi:type="archimate:ApplicationComponent" name="Capa de Controladores (controllers)" id="el-app-controllers"/>
+    <element xsi:type="archimate:ApplicationComponent" name="Capa de Servicios (services)" id="el-app-services"/>
+    <element xsi:type="archimate:ApplicationComponent" name="Capa de Repositorios (repositories)" id="el-app-repos"/>
+    <element xsi:type="archimate:DataObject" name="Base de datos relacional" id="el-data-db"/>
+    <element xsi:type="archimate:ApplicationFunction" name="Funcion: Autenticacion" id="el-fn-auth"/>
+    <element xsi:type="archimate:ApplicationFunction" name="Funcion: Materias e Inscripciones" id="el-fn-materias"/>
+    <element xsi:type="archimate:ApplicationFunction" name="Funcion: Tareas y Calificaciones" id="el-fn-tareas"/>
+    <element xsi:type="archimate:ApplicationFunction" name="Funcion: Archivos" id="el-fn-archivos"/>
+    <element xsi:type="archimate:ApplicationFunction" name="Funcion: Comentarios" id="el-fn-comentarios"/>
+    <element xsi:type="archimate:ApplicationFunction" name="Funcion: Anuncios" id="el-fn-anuncios"/>
+    <element xsi:type="archimate:ApplicationFunction" name="Funcion: Usuarios" id="el-fn-usuarios"/>
+    <element xsi:type="archimate:ApplicationFunction" name="Funcion: Administracion" id="el-fn-admin"/>
+  </folder>
+  <folder name="Technology &amp; Physical" id="id-folder-technology" type="technology">
+    <element xsi:type="archimate:Device" name="Dispositivo (movil o navegador)" id="el-dispositivo"/>
+    <element xsi:type="archimate:CommunicationNetwork" name="Red (HTTP/HTTPS)" id="el-red"/>
+    <element xsi:type="archimate:Node" name="Contenedor: frontend-ionic" id="el-node-fe"/>
+    <element xsi:type="archimate:SystemSoftware" name="Servidor Ionic (nginx)" id="el-sw-nginx"/>
+    <element xsi:type="archimate:TechnologyService" name="Servicio Web Ionic" id="el-svc-web"/>
+    <element xsi:type="archimate:Node" name="Contenedor: backend" id="el-node-be"/>
+    <element xsi:type="archimate:SystemSoftware" name="API REST (Express)" id="el-sw-api"/>
+    <element xsi:type="archimate:TechnologyInterface" name="Interfaz HTTPS :3001/api" id="el-iface-api"/>
+    <element xsi:type="archimate:TechnologyService" name="Servicio API REST" id="el-svc-api"/>
+    <element xsi:type="archimate:Artifact" name="Almacenamiento de archivos (uploads)" id="el-artifact-uploads"/>
+    <element xsi:type="archimate:Node" name="Contenedor / instancia: base de datos" id="el-node-db"/>
+    <element xsi:type="archimate:SystemSoftware" name="Motor PostgreSQL" id="el-sw-postgres"/>
+    <element xsi:type="archimate:TechnologyService" name="Servicio de Base de Datos" id="el-svc-db"/>
+  </folder>
+  <folder name="Relations" id="id-folder-relations" type="relations">
+    <element xsi:type="archimate:AssignmentRelationship" id="rel-1" source="el-admin" target="el-dispositivo"/>
+    <element xsi:type="archimate:AssignmentRelationship" id="rel-2" source="el-profesor" target="el-dispositivo"/>
+    <element xsi:type="archimate:AssignmentRelationship" id="rel-3" source="el-estudiante" target="el-dispositivo"/>
+    <element xsi:type="archimate:FlowRelationship" id="rel-4" source="el-dispositivo" target="el-red"/>
+    <element xsi:type="archimate:FlowRelationship" id="rel-5" source="el-red" target="el-svc-web"/>
+    <element xsi:type="archimate:FlowRelationship" id="rel-6" source="el-red" target="el-svc-api"/>
+    <element xsi:type="archimate:AssignmentRelationship" id="rel-7" source="el-node-fe" target="el-sw-nginx"/>
+    <element xsi:type="archimate:RealizationRelationship" id="rel-8" source="el-sw-nginx" target="el-svc-web"/>
+    <element xsi:type="archimate:AssignmentRelationship" id="rel-9" source="el-node-be" target="el-sw-api"/>
+    <element xsi:type="archimate:CompositionRelationship" id="rel-10" source="el-sw-api" target="el-iface-api"/>
+    <element xsi:type="archimate:RealizationRelationship" id="rel-11" source="el-sw-api" target="el-svc-api"/>
+    <element xsi:type="archimate:CompositionRelationship" id="rel-12" source="el-node-be" target="el-artifact-uploads"/>
+    <element xsi:type="archimate:AccessRelationship" id="rel-13" source="el-sw-api" target="el-artifact-uploads"/>
+    <element xsi:type="archimate:AccessRelationship" id="rel-14" source="el-sw-api" target="el-svc-db"/>
+    <element xsi:type="archimate:AssignmentRelationship" id="rel-15" source="el-node-db" target="el-sw-postgres"/>
+    <element xsi:type="archimate:RealizationRelationship" id="rel-16" source="el-sw-postgres" target="el-svc-db"/>
+    <element xsi:type="archimate:ServingRelationship" id="rel-17" source="el-appsvc-api" target="el-app-frontend"/>
+    <element xsi:type="archimate:RealizationRelationship" id="rel-18" source="el-app-routes" target="el-appsvc-api"/>
+    <element xsi:type="archimate:TriggeringRelationship" id="rel-19" source="el-app-routes" target="el-app-controllers"/>
+    <element xsi:type="archimate:TriggeringRelationship" id="rel-20" source="el-app-controllers" target="el-app-services"/>
+    <element xsi:type="archimate:TriggeringRelationship" id="rel-21" source="el-app-services" target="el-app-repos"/>
+    <element xsi:type="archimate:AccessRelationship" id="rel-22" source="el-app-repos" target="el-data-db"/>
+    <element xsi:type="archimate:AssignmentRelationship" id="rel-23" source="el-app-services" target="el-fn-auth"/>
+    <element xsi:type="archimate:AssignmentRelationship" id="rel-24" source="el-app-services" target="el-fn-materias"/>
+    <element xsi:type="archimate:AssignmentRelationship" id="rel-25" source="el-app-services" target="el-fn-tareas"/>
+    <element xsi:type="archimate:AssignmentRelationship" id="rel-26" source="el-app-services" target="el-fn-archivos"/>
+    <element xsi:type="archimate:AssignmentRelationship" id="rel-27" source="el-app-services" target="el-fn-comentarios"/>
+    <element xsi:type="archimate:AssignmentRelationship" id="rel-28" source="el-app-services" target="el-fn-anuncios"/>
+    <element xsi:type="archimate:AssignmentRelationship" id="rel-29" source="el-app-services" target="el-fn-usuarios"/>
+    <element xsi:type="archimate:AssignmentRelationship" id="rel-30" source="el-app-services" target="el-fn-admin"/>
+  </folder>
+  <folder name="Views" id="id-folder-views" type="diagrams">
+    <element xsi:type="archimate:ArchimateDiagramModel" name="01 - Arquitectura Tecnologica" id="view-tech">
+      <children xsi:type="archimate:DiagramObject" id="v1-do-admin" archimateElement="el-admin"><bounds x="20" y="20" width="160" height="60"/></children>
+      <children xsi:type="archimate:DiagramObject" id="v1-do-profesor" archimateElement="el-profesor"><bounds x="200" y="20" width="160" height="60"/></children>
+      <children xsi:type="archimate:DiagramObject" id="v1-do-estudiante" archimateElement="el-estudiante"><bounds x="380" y="20" width="160" height="60"/></children>
+      <children xsi:type="archimate:DiagramObject" id="v1-do-dispositivo" archimateElement="el-dispositivo"><bounds x="560" y="20" width="160" height="60"/></children>
+      <children xsi:type="archimate:DiagramObject" id="v1-do-red" archimateElement="el-red"><bounds x="20" y="120" width="160" height="60"/></children>
+      <children xsi:type="archimate:DiagramObject" id="v1-do-node-fe" archimateElement="el-node-fe"><bounds x="200" y="120" width="160" height="60"/></children>
+      <children xsi:type="archimate:DiagramObject" id="v1-do-sw-nginx" archimateElement="el-sw-nginx"><bounds x="380" y="120" width="160" height="60"/></children>
+      <children xsi:type="archimate:DiagramObject" id="v1-do-svc-web" archimateElement="el-svc-web"><bounds x="560" y="120" width="160" height="60"/></children>
+      <children xsi:type="archimate:DiagramObject" id="v1-do-node-be" archimateElement="el-node-be"><bounds x="20" y="220" width="160" height="60"/></children>
+      <children xsi:type="archimate:DiagramObject" id="v1-do-sw-api" archimateElement="el-sw-api"><bounds x="200" y="220" width="160" height="60"/></children>
+      <children xsi:type="archimate:DiagramObject" id="v1-do-iface-api" archimateElement="el-iface-api"><bounds x="380" y="220" width="160" height="60"/></children>
+      <children xsi:type="archimate:DiagramObject" id="v1-do-svc-api" archimateElement="el-svc-api"><bounds x="560" y="220" width="160" height="60"/></children>
+      <children xsi:type="archimate:DiagramObject" id="v1-do-artifact-uploads" archimateElement="el-artifact-uploads"><bounds x="20" y="320" width="160" height="60"/></children>
+      <children xsi:type="archimate:DiagramObject" id="v1-do-node-db" archimateElement="el-node-db"><bounds x="200" y="320" width="160" height="60"/></children>
+      <children xsi:type="archimate:DiagramObject" id="v1-do-sw-postgres" archimateElement="el-sw-postgres"><bounds x="380" y="320" width="160" height="60"/></children>
+      <children xsi:type="archimate:DiagramObject" id="v1-do-svc-db" archimateElement="el-svc-db"><bounds x="560" y="320" width="160" height="60"/></children>
+      <children xsi:type="archimate:DiagramModelConnection" id="v1-c-1" source="v1-do-admin" target="v1-do-dispositivo" archimateRelationship="rel-1"/>
+      <children xsi:type="archimate:DiagramModelConnection" id="v1-c-2" source="v1-do-profesor" target="v1-do-dispositivo" archimateRelationship="rel-2"/>
+      <children xsi:type="archimate:DiagramModelConnection" id="v1-c-3" source="v1-do-estudiante" target="v1-do-dispositivo" archimateRelationship="rel-3"/>
+      <children xsi:type="archimate:DiagramModelConnection" id="v1-c-4" source="v1-do-dispositivo" target="v1-do-red" archimateRelationship="rel-4"/>
+      <children xsi:type="archimate:DiagramModelConnection" id="v1-c-5" source="v1-do-red" target="v1-do-svc-web" archimateRelationship="rel-5"/>
+      <children xsi:type="archimate:DiagramModelConnection" id="v1-c-6" source="v1-do-red" target="v1-do-svc-api" archimateRelationship="rel-6"/>
+      <children xsi:type="archimate:DiagramModelConnection" id="v1-c-7" source="v1-do-node-fe" target="v1-do-sw-nginx" archimateRelationship="rel-7"/>
+      <children xsi:type="archimate:DiagramModelConnection" id="v1-c-8" source="v1-do-sw-nginx" target="v1-do-svc-web" archimateRelationship="rel-8"/>
+      <children xsi:type="archimate:DiagramModelConnection" id="v1-c-9" source="v1-do-node-be" target="v1-do-sw-api" archimateRelationship="rel-9"/>
+      <children xsi:type="archimate:DiagramModelConnection" id="v1-c-10" source="v1-do-sw-api" target="v1-do-iface-api" archimateRelationship="rel-10"/>
+      <children xsi:type="archimate:DiagramModelConnection" id="v1-c-11" source="v1-do-sw-api" target="v1-do-svc-api" archimateRelationship="rel-11"/>
+      <children xsi:type="archimate:DiagramModelConnection" id="v1-c-12" source="v1-do-node-be" target="v1-do-artifact-uploads" archimateRelationship="rel-12"/>
+      <children xsi:type="archimate:DiagramModelConnection" id="v1-c-13" source="v1-do-sw-api" target="v1-do-artifact-uploads" archimateRelationship="rel-13"/>
+      <children xsi:type="archimate:DiagramModelConnection" id="v1-c-14" source="v1-do-sw-api" target="v1-do-svc-db" archimateRelationship="rel-14"/>
+      <children xsi:type="archimate:DiagramModelConnection" id="v1-c-15" source="v1-do-node-db" target="v1-do-sw-postgres" archimateRelationship="rel-15"/>
+      <children xsi:type="archimate:DiagramModelConnection" id="v1-c-16" source="v1-do-sw-postgres" target="v1-do-svc-db" archimateRelationship="rel-16"/>
+    </element>
+    <element xsi:type="archimate:ArchimateDiagramModel" name="02 - Arquitectura de Software" id="view-sw">
+      <children xsi:type="archimate:DiagramObject" id="v2-do-app-frontend" archimateElement="el-app-frontend"><bounds x="20" y="20" width="160" height="60"/></children>
+      <children xsi:type="archimate:DiagramObject" id="v2-do-appsvc-api" archimateElement="el-appsvc-api"><bounds x="200" y="20" width="160" height="60"/></children>
+      <children xsi:type="archimate:DiagramObject" id="v2-do-app-routes" archimateElement="el-app-routes"><bounds x="380" y="20" width="160" height="60"/></children>
+      <children xsi:type="archimate:DiagramObject" id="v2-do-app-controllers" archimateElement="el-app-controllers"><bounds x="560" y="20" width="160" height="60"/></children>
+      <children xsi:type="archimate:DiagramObject" id="v2-do-app-services" archimateElement="el-app-services"><bounds x="20" y="120" width="160" height="60"/></children>
+      <children xsi:type="archimate:DiagramObject" id="v2-do-app-repos" archimateElement="el-app-repos"><bounds x="200" y="120" width="160" height="60"/></children>
+      <children xsi:type="archimate:DiagramObject" id="v2-do-data-db" archimateElement="el-data-db"><bounds x="380" y="120" width="160" height="60"/></children>
+      <children xsi:type="archimate:DiagramObject" id="v2-do-fn-auth" archimateElement="el-fn-auth"><bounds x="560" y="120" width="160" height="60"/></children>
+      <children xsi:type="archimate:DiagramObject" id="v2-do-fn-materias" archimateElement="el-fn-materias"><bounds x="20" y="220" width="160" height="60"/></children>
+      <children xsi:type="archimate:DiagramObject" id="v2-do-fn-tareas" archimateElement="el-fn-tareas"><bounds x="200" y="220" width="160" height="60"/></children>
+      <children xsi:type="archimate:DiagramObject" id="v2-do-fn-archivos" archimateElement="el-fn-archivos"><bounds x="380" y="220" width="160" height="60"/></children>
+      <children xsi:type="archimate:DiagramObject" id="v2-do-fn-comentarios" archimateElement="el-fn-comentarios"><bounds x="560" y="220" width="160" height="60"/></children>
+      <children xsi:type="archimate:DiagramObject" id="v2-do-fn-anuncios" archimateElement="el-fn-anuncios"><bounds x="20" y="320" width="160" height="60"/></children>
+      <children xsi:type="archimate:DiagramObject" id="v2-do-fn-usuarios" archimateElement="el-fn-usuarios"><bounds x="200" y="320" width="160" height="60"/></children>
+      <children xsi:type="archimate:DiagramObject" id="v2-do-fn-admin" archimateElement="el-fn-admin"><bounds x="380" y="320" width="160" height="60"/></children>
+      <children xsi:type="archimate:DiagramModelConnection" id="v2-c-1" source="v2-do-appsvc-api" target="v2-do-app-frontend" archimateRelationship="rel-17"/>
+      <children xsi:type="archimate:DiagramModelConnection" id="v2-c-2" source="v2-do-app-routes" target="v2-do-appsvc-api" archimateRelationship="rel-18"/>
+      <children xsi:type="archimate:DiagramModelConnection" id="v2-c-3" source="v2-do-app-routes" target="v2-do-app-controllers" archimateRelationship="rel-19"/>
+      <children xsi:type="archimate:DiagramModelConnection" id="v2-c-4" source="v2-do-app-controllers" target="v2-do-app-services" archimateRelationship="rel-20"/>
+      <children xsi:type="archimate:DiagramModelConnection" id="v2-c-5" source="v2-do-app-services" target="v2-do-app-repos" archimateRelationship="rel-21"/>
+      <children xsi:type="archimate:DiagramModelConnection" id="v2-c-6" source="v2-do-app-repos" target="v2-do-data-db" archimateRelationship="rel-22"/>
+      <children xsi:type="archimate:DiagramModelConnection" id="v2-c-7" source="v2-do-app-services" target="v2-do-fn-auth" archimateRelationship="rel-23"/>
+      <children xsi:type="archimate:DiagramModelConnection" id="v2-c-8" source="v2-do-app-services" target="v2-do-fn-materias" archimateRelationship="rel-24"/>
+      <children xsi:type="archimate:DiagramModelConnection" id="v2-c-9" source="v2-do-app-services" target="v2-do-fn-tareas" archimateRelationship="rel-25"/>
+      <children xsi:type="archimate:DiagramModelConnection" id="v2-c-10" source="v2-do-app-services" target="v2-do-fn-archivos" archimateRelationship="rel-26"/>
+      <children xsi:type="archimate:DiagramModelConnection" id="v2-c-11" source="v2-do-app-services" target="v2-do-fn-comentarios" archimateRelationship="rel-27"/>
+      <children xsi:type="archimate:DiagramModelConnection" id="v2-c-12" source="v2-do-app-services" target="v2-do-fn-anuncios" archimateRelationship="rel-28"/>
+      <children xsi:type="archimate:DiagramModelConnection" id="v2-c-13" source="v2-do-app-services" target="v2-do-fn-usuarios" archimateRelationship="rel-29"/>
+      <children xsi:type="archimate:DiagramModelConnection" id="v2-c-14" source="v2-do-app-services" target="v2-do-fn-admin" archimateRelationship="rel-30"/>
+    </element>
+  </folder>
+</archimate:model>

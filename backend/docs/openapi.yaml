@@ -1,0 +1,841 @@
+openapi: 3.0.3
+info:
+  title: GestorTareas (AulaVirtual) API
+  description: >
+    API REST del aula virtual: materias, tareas, archivos, comentarios,
+    anuncios, cuentas de usuario y panel de administración.
+  version: "1.0.0"
+servers:
+  - url: http://localhost:3001/api
+    description: Desarrollo local
+tags:
+  - name: Salud
+  - name: Autenticación
+  - name: Materias
+  - name: Anuncios
+  - name: Tareas
+  - name: Comentarios
+  - name: Archivos
+  - name: Usuarios
+  - name: Administración
+
+security:
+  - bearerAuth: []
+
+paths:
+  /health:
+    get:
+      tags: [Salud]
+      summary: Comprobación de salud del backend
+      security: []
+      responses:
+        "200":
+          description: El backend está funcionando
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status: { type: string, example: ok }
+
+  /auth/login:
+    post:
+      tags: [Autenticación]
+      summary: Iniciar sesión
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LoginRequest"
+      responses:
+        "200":
+          description: Sesión iniciada
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LoginResponse"
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "429": { description: Demasiados intentos, reintenta más tarde }
+
+  /materias:
+    get:
+      tags: [Materias]
+      summary: Listar materias visibles para el usuario autenticado
+      parameters:
+        - $ref: "#/components/parameters/Como"
+      responses:
+        "200":
+          description: Lista de materias
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/Materia" }
+    post:
+      tags: [Materias]
+      summary: Crear materia (admin)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CrearMateria"
+      responses:
+        "201":
+          description: Materia creada
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Materia" }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+
+  /materias/reordenar:
+    put:
+      tags: [Materias]
+      summary: Reordenar materias (admin)
+      parameters:
+        - $ref: "#/components/parameters/Como"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                orden:
+                  type: array
+                  items: { type: integer }
+      responses:
+        "200": { description: Orden actualizado }
+        "400": { $ref: "#/components/responses/BadRequest" }
+
+  /materias/{id}:
+    put:
+      tags: [Materias]
+      summary: Editar materia (admin)
+      parameters:
+        - $ref: "#/components/parameters/MateriaId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/CrearMateria" }
+      responses:
+        "200":
+          description: Materia actualizada
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Materia" }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "404": { $ref: "#/components/responses/NotFound" }
+    delete:
+      tags: [Materias]
+      summary: Eliminar materia y sus tareas (admin)
+      parameters:
+        - $ref: "#/components/parameters/MateriaId"
+      responses:
+        "200": { description: Materia eliminada }
+        "404": { $ref: "#/components/responses/NotFound" }
+
+  /materias/{id}/estudiantes:
+    get:
+      tags: [Materias]
+      summary: Listar estudiantes inscritos (admin o profesor asignado)
+      parameters:
+        - $ref: "#/components/parameters/MateriaId"
+      responses:
+        "200":
+          description: Estudiantes inscritos
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/Usuario" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+    post:
+      tags: [Materias]
+      summary: Inscribir estudiante (admin)
+      parameters:
+        - $ref: "#/components/parameters/MateriaId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                usuario_id: { type: integer }
+      responses:
+        "201":
+          description: Estudiante inscrito
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Usuario" }
+        "404": { $ref: "#/components/responses/NotFound" }
+
+  /materias/{id}/estudiantes/{usuarioId}:
+    delete:
+      tags: [Materias]
+      summary: Retirar estudiante de una materia (admin)
+      parameters:
+        - $ref: "#/components/parameters/MateriaId"
+        - name: usuarioId
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        "200": { description: Estudiante desinscrito }
+        "404": { $ref: "#/components/responses/NotFound" }
+
+  /materias/{id}/anuncios:
+    get:
+      tags: [Anuncios]
+      summary: Listar anuncios de una materia
+      parameters:
+        - $ref: "#/components/parameters/MateriaId"
+        - $ref: "#/components/parameters/Como"
+      responses:
+        "200":
+          description: Anuncios
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/Anuncio" }
+        "404": { $ref: "#/components/responses/NotFound" }
+    post:
+      tags: [Anuncios]
+      summary: Publicar anuncio (admin o profesor asignado)
+      parameters:
+        - $ref: "#/components/parameters/MateriaId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                contenido: { type: string }
+      responses:
+        "201":
+          description: Anuncio publicado
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Anuncio" }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+
+  /anuncios/{id}:
+    delete:
+      tags: [Anuncios]
+      summary: Eliminar anuncio (admin o profesor asignado)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        "200": { description: Anuncio eliminado }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+
+  /tareas:
+    get:
+      tags: [Tareas]
+      summary: Listar tareas visibles
+      parameters:
+        - $ref: "#/components/parameters/MateriaIdQuery"
+        - $ref: "#/components/parameters/Como"
+      responses:
+        "200":
+          description: Tareas
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/Tarea" }
+    post:
+      tags: [Tareas]
+      summary: Crear tarea (admin o profesor asignado)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/CrearTarea" }
+      responses:
+        "201":
+          description: Tarea creada
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Tarea" }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+
+  /tareas/estadisticas:
+    get:
+      tags: [Tareas]
+      summary: Estadísticas de tareas
+      parameters:
+        - $ref: "#/components/parameters/MateriaIdQuery"
+        - $ref: "#/components/parameters/Como"
+      responses:
+        "200":
+          description: Estadísticas
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/EstadisticasTareas" }
+
+  /tareas/completadas:
+    delete:
+      tags: [Tareas]
+      summary: Eliminar tareas completadas (admin o profesor asignado)
+      parameters:
+        - $ref: "#/components/parameters/MateriaIdQuery"
+        - $ref: "#/components/parameters/Como"
+      responses:
+        "200":
+          description: Cantidad eliminada
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  eliminadas: { type: integer }
+
+  /tareas/{id}:
+    get:
+      tags: [Tareas]
+      summary: Detalle de una tarea
+      parameters:
+        - $ref: "#/components/parameters/TareaId"
+        - $ref: "#/components/parameters/Como"
+      responses:
+        "200":
+          description: Detalle de la tarea
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/TareaDetalle" }
+        "404": { $ref: "#/components/responses/NotFound" }
+    put:
+      tags: [Tareas]
+      summary: Editar tarea (admin o profesor asignado)
+      parameters:
+        - $ref: "#/components/parameters/TareaId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/EditarTarea" }
+      responses:
+        "200":
+          description: Tarea actualizada
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Tarea" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+    delete:
+      tags: [Tareas]
+      summary: Eliminar tarea (admin o profesor asignado)
+      parameters:
+        - $ref: "#/components/parameters/TareaId"
+      responses:
+        "200": { description: Tarea eliminada }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+
+  /tareas/{id}/comentarios:
+    get:
+      tags: [Comentarios]
+      summary: Listar comentarios de una tarea
+      parameters:
+        - $ref: "#/components/parameters/TareaId"
+        - $ref: "#/components/parameters/Como"
+      responses:
+        "200":
+          description: Comentarios
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/Comentario" }
+        "404": { $ref: "#/components/responses/NotFound" }
+    post:
+      tags: [Comentarios]
+      summary: Publicar comentario
+      parameters:
+        - $ref: "#/components/parameters/TareaId"
+        - $ref: "#/components/parameters/Como"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                contenido: { type: string }
+      responses:
+        "201":
+          description: Comentario publicado
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Comentario" }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "404": { $ref: "#/components/responses/NotFound" }
+
+  /comentarios/{id}:
+    delete:
+      tags: [Comentarios]
+      summary: Eliminar comentario
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+        - $ref: "#/components/parameters/Como"
+      responses:
+        "200": { description: Comentario eliminado }
+        "404": { $ref: "#/components/responses/NotFound" }
+
+  /tareas/{id}/archivos:
+    get:
+      tags: [Archivos]
+      summary: Listar archivos de una tarea
+      parameters:
+        - $ref: "#/components/parameters/TareaId"
+        - $ref: "#/components/parameters/Como"
+      responses:
+        "200":
+          description: Archivos
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/Archivo" }
+        "404": { $ref: "#/components/responses/NotFound" }
+
+  /tareas/{id}/archivo:
+    post:
+      tags: [Archivos]
+      summary: Subir un archivo como entrega
+      parameters:
+        - $ref: "#/components/parameters/TareaId"
+        - $ref: "#/components/parameters/Como"
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                archivo:
+                  type: string
+                  format: binary
+                  description: >
+                    PDF, Word (.doc/.docx) o imagen (png/jpeg/webp), máx. 5MB.
+      responses:
+        "200":
+          description: Tarea actualizada con la lista de archivos
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/TareaConArchivos" }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "403":
+          description: Entrega bloqueada (calificada o vencida)
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+        "404": { $ref: "#/components/responses/NotFound" }
+
+  /tareas/{id}/archivo/{archivoId}:
+    delete:
+      tags: [Archivos]
+      summary: Quitar un archivo de una entrega
+      parameters:
+        - $ref: "#/components/parameters/TareaId"
+        - name: archivoId
+          in: path
+          required: true
+          schema: { type: integer }
+        - $ref: "#/components/parameters/Como"
+      responses:
+        "200":
+          description: Tarea actualizada con la lista de archivos
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/TareaConArchivos" }
+        "403":
+          description: Entrega bloqueada (calificada o vencida)
+        "404": { $ref: "#/components/responses/NotFound" }
+
+  /tareas/{id}/registro:
+    get:
+      tags: [Tareas]
+      summary: Registro de entregas de una tarea (admin o profesor asignado)
+      parameters:
+        - $ref: "#/components/parameters/TareaId"
+      responses:
+        "200":
+          description: Registro de entregas
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/RegistroEntrega" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+
+  /tareas/{id}/notas:
+    put:
+      tags: [Tareas]
+      summary: Calificar una entrega (admin o profesor asignado)
+      parameters:
+        - $ref: "#/components/parameters/TareaId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                usuario_id: { type: integer }
+                nota:
+                  type: number
+                  nullable: true
+                  minimum: 0
+                  maximum: 10
+                comentario: { type: string, nullable: true }
+      responses:
+        "200":
+          description: Nota guardada
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Nota" }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+
+  /usuarios:
+    get:
+      tags: [Usuarios]
+      summary: Listar cuentas por rol (admin)
+      parameters:
+        - name: rol
+          in: query
+          schema: { type: string, enum: [estudiante, profesor, admin], default: estudiante }
+      responses:
+        "200":
+          description: Cuentas
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/Usuario" }
+    post:
+      tags: [Usuarios]
+      summary: Crear cuenta (admin)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/CrearUsuario" }
+      responses:
+        "201":
+          description: Cuenta creada
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Usuario" }
+        "400": { $ref: "#/components/responses/BadRequest" }
+
+  /usuarios/{id}:
+    delete:
+      tags: [Usuarios]
+      summary: Eliminar cuenta (admin)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        "200": { description: Cuenta eliminada }
+        "400":
+          description: No puedes eliminar tu propia cuenta o al último administrador
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+        "404": { $ref: "#/components/responses/NotFound" }
+
+  /admin/estadisticas:
+    get:
+      tags: [Administración]
+      summary: Estadísticas del panel de administración (admin)
+      responses:
+        "200":
+          description: Estadísticas generales
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/EstadisticasAdmin" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  parameters:
+    MateriaId:
+      name: id
+      in: path
+      required: true
+      schema: { type: integer }
+    TareaId:
+      name: id
+      in: path
+      required: true
+      schema: { type: integer }
+    MateriaIdQuery:
+      name: materia_id
+      in: query
+      schema: { type: integer }
+    Como:
+      name: como
+      in: query
+      description: Solo tiene efecto para el rol admin. Actuar como el estudiante indicado.
+      schema: { type: integer }
+
+  responses:
+    BadRequest:
+      description: Solicitud inválida
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/Error" }
+    Unauthorized:
+      description: No autenticado o credenciales inválidas
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/Error" }
+    Forbidden:
+      description: No tienes permiso para esta acción
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/Error" }
+    NotFound:
+      description: No encontrado
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/Error" }
+
+  schemas:
+    Error:
+      type: object
+      properties:
+        error: { type: string }
+
+    LoginRequest:
+      type: object
+      required: [correo, password]
+      properties:
+        correo: { type: string, format: email }
+        password: { type: string }
+
+    LoginResponse:
+      type: object
+      properties:
+        token: { type: string }
+        usuario: { $ref: "#/components/schemas/Usuario" }
+
+    Usuario:
+      type: object
+      properties:
+        id: { type: integer }
+        nombre: { type: string }
+        correo: { type: string }
+        rol: { type: string, enum: [admin, profesor, estudiante] }
+        fecha_creacion: { type: string, format: date-time }
+
+    CrearUsuario:
+      type: object
+      required: [nombre, correo, password]
+      properties:
+        nombre: { type: string }
+        correo: { type: string, format: email }
+        password: { type: string, minLength: 4 }
+        rol: { type: string, enum: [admin, profesor, estudiante], default: estudiante }
+
+    Materia:
+      type: object
+      properties:
+        id: { type: integer }
+        nombre: { type: string }
+        profesor: { type: string, nullable: true }
+        profesor_id: { type: integer, nullable: true }
+        orden: { type: integer }
+        fecha_creacion: { type: string, format: date-time }
+        es_dueno: { type: boolean }
+        total: { type: integer }
+        completadas: { type: integer }
+        pendientes: { type: integer }
+
+    CrearMateria:
+      type: object
+      required: [nombre, profesor_id]
+      properties:
+        nombre: { type: string }
+        profesor_id: { type: integer }
+
+    Tarea:
+      type: object
+      properties:
+        id: { type: integer }
+        materia_id: { type: integer, nullable: true }
+        titulo: { type: string }
+        descripcion: { type: string, nullable: true }
+        prioridad: { type: string, enum: [alta, media, baja] }
+        fecha_limite: { type: string, format: date, nullable: true }
+        completada: { type: boolean }
+        fecha_creacion: { type: string, format: date-time }
+        materia_nombre: { type: string }
+        num_archivos: { type: integer }
+        mi_nota:
+          oneOf:
+            - type: number
+            - type: string
+            - type: "null"
+
+    CrearTarea:
+      type: object
+      required: [titulo, materia_id]
+      properties:
+        titulo: { type: string }
+        descripcion: { type: string, nullable: true }
+        prioridad: { type: string, enum: [alta, media, baja], default: media }
+        fecha_limite: { type: string, format: date, nullable: true }
+        materia_id: { type: integer }
+
+    EditarTarea:
+      allOf:
+        - $ref: "#/components/schemas/CrearTarea"
+        - type: object
+          properties:
+            completada: { type: boolean }
+
+    TareaDetalle:
+      allOf:
+        - $ref: "#/components/schemas/Tarea"
+        - type: object
+          properties:
+            archivos:
+              type: array
+              items: { $ref: "#/components/schemas/Archivo" }
+            mi_nota:
+              oneOf:
+                - $ref: "#/components/schemas/Nota"
+                - type: "null"
+
+    TareaConArchivos:
+      allOf:
+        - $ref: "#/components/schemas/Tarea"
+        - type: object
+          properties:
+            archivos:
+              type: array
+              items: { $ref: "#/components/schemas/Archivo" }
+
+    Archivo:
+      type: object
+      properties:
+        id: { type: integer }
+        tarea_id: { type: integer }
+        usuario_id: { type: integer, nullable: true }
+        nombre_original: { type: string }
+        ruta: { type: string }
+        fecha_subida: { type: string, format: date-time }
+        usuario_nombre: { type: string, nullable: true }
+
+    Comentario:
+      type: object
+      properties:
+        id: { type: integer }
+        tarea_id: { type: integer }
+        contenido: { type: string }
+        fecha_creacion: { type: string, format: date-time }
+        autor_nombre: { type: string }
+        autor_rol: { type: string }
+
+    Anuncio:
+      type: object
+      properties:
+        id: { type: integer }
+        materia_id: { type: integer }
+        contenido: { type: string }
+        fecha_creacion: { type: string, format: date-time }
+
+    Nota:
+      type: object
+      properties:
+        nota:
+          oneOf:
+            - type: number
+            - type: string
+            - type: "null"
+        comentario: { type: string, nullable: true }
+
+    RegistroEntrega:
+      type: object
+      properties:
+        usuario_id: { type: integer }
+        nombre: { type: string }
+        correo: { type: string }
+        num_archivos: { type: integer }
+        ultima_entrega: { type: string, format: date-time, nullable: true }
+        nota:
+          oneOf:
+            - type: number
+            - type: string
+            - type: "null"
+        comentario: { type: string, nullable: true }
+
+    EstadisticasTareas:
+      type: object
+      properties:
+        total: { type: integer }
+        completadas: { type: integer }
+        pendientes: { type: integer }
+        vencidas: { type: integer }
+        por_prioridad:
+          type: object
+          properties:
+            alta: { type: integer }
+            media: { type: integer }
+            baja: { type: integer }
+
+    EstadisticasAdmin:
+      type: object
+      properties:
+        usuarios:
+          type: object
+          properties:
+            admin: { type: integer }
+            profesor: { type: integer }
+            estudiante: { type: integer }
+        materias: { type: integer }
+        tareas:
+          type: object
+          properties:
+            total: { type: integer }
+            completadas: { type: integer }
+            pendientes: { type: integer }
+        por_materia:
+          type: array
+          items:
+            type: object
+            properties:
+              id: { type: integer }
+              nombre: { type: string }
+              completadas: { type: integer }
+              pendientes: { type: integer }
