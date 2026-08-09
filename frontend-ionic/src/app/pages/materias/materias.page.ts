@@ -24,7 +24,6 @@ import {
   ApiService,
   Materia,
   EstadisticasTareas,
-  Estudiante,
   ModoAulaEstudiante,
   Profesor
 } from '../../services/api.service';
@@ -33,10 +32,6 @@ import {
   MateriaFormComponent,
   MateriaFormularioDatos
 } from '../../components/materia-form/materia-form.component';
-
-import {
-  GestionEstudiantesComponent
-} from '../../components/gestion-estudiantes/gestion-estudiantes.component';
 
 @Component({
   selector: 'app-materias',
@@ -58,8 +53,7 @@ import {
     IonProgressBar,
     IonModal,
     IonToast,
-    MateriaFormComponent,
-    GestionEstudiantesComponent
+    MateriaFormComponent
   ]
 })
 
@@ -74,8 +68,6 @@ export class MateriasPage implements OnInit {
   usuario = this.apiService.obtenerUsuario();
 
   mostrarFormularioMateria = false;
-
-  mostrarGestionEstudiantes = false;
 
   materiaEnEdicion: Materia | null = null;
 
@@ -233,37 +225,12 @@ export class MateriasPage implements OnInit {
     this.materiaEnEdicion = null;
   }
 
-  abrirGestionEstudiantes(): void {
+  abrirDashboard(): void {
     if (!this.esAdministrador) {
       return;
     }
 
-    this.mostrarGestionEstudiantes = true;
-  }
-
-  cerrarGestionEstudiantes(): void {
-    this.mostrarGestionEstudiantes = false;
-    this.cargarProfesores();
-  }
-
-  entrarModoAula(
-    estudiante: Estudiante
-  ): void {
-    if (!this.esAdministrador) {
-      return;
-    }
-
-    this.apiService
-      .entrarModoAula(estudiante);
-
-    this.mostrarGestionEstudiantes = false;
-
-    this.mostrarToastMateria(
-      `Ahora estás viendo el aula de ${estudiante.nombre}`,
-      'success'
-    );
-
-    this.cargarMaterias();
+    this.router.navigate(['/dashboard']);
   }
 
   salirModoAula(): void {

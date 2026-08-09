@@ -1,0 +1,187 @@
+<ion-header>
+  <ion-toolbar class="barra-superior">
+    <div class="barra-contenido">
+
+      <ion-button
+        fill="clear"
+        size="small"
+        class="boton-volver"
+        (click)="volver()">
+        ← Mis Materias
+      </ion-button>
+
+      <span class="marca">Panel de administración</span>
+
+    </div>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content>
+
+  <section class="hero">
+    <div class="hero-contenido">
+      <span class="gt-eyebrow">Administración</span>
+
+      <h1>Panel de control</h1>
+
+      <p>
+        Estadísticas generales del sistema y gestión
+        de cuentas de estudiantes, profesores y administradores.
+      </p>
+    </div>
+  </section>
+
+  <main class="contenido">
+
+    @if (cargando) {
+      <div class="estado">
+        <ion-spinner name="crescent"></ion-spinner>
+        <p>Cargando estadísticas...</p>
+      </div>
+    }
+
+    @if (!cargando && mensajeError) {
+      <div class="estado">
+        <ion-text color="danger">
+          <p>{{ mensajeError }}</p>
+        </ion-text>
+
+        <ion-button fill="outline" (click)="cargarEstadisticas()">
+          Reintentar
+        </ion-button>
+      </div>
+    }
+
+    @if (!cargando && estadisticas) {
+
+      <section class="kpis-grid">
+
+        <article class="kpi-tarjeta">
+          <span class="kpi-etiqueta">Estudiantes</span>
+          <strong class="gt-num">{{ estadisticas.usuarios.estudiante }}</strong>
+        </article>
+
+        <article class="kpi-tarjeta">
+          <span class="kpi-etiqueta">Profesores</span>
+          <strong class="gt-num">{{ estadisticas.usuarios.profesor }}</strong>
+        </article>
+
+        <article class="kpi-tarjeta">
+          <span class="kpi-etiqueta">Administradores</span>
+          <strong class="gt-num">{{ estadisticas.usuarios.admin }}</strong>
+        </article>
+
+        <article class="kpi-tarjeta">
+          <span class="kpi-etiqueta">Materias</span>
+          <strong class="gt-num">{{ estadisticas.materias }}</strong>
+        </article>
+
+        <article class="kpi-tarjeta">
+          <span class="kpi-etiqueta">Tareas totales</span>
+          <strong class="gt-num">{{ estadisticas.tareas.total }}</strong>
+        </article>
+
+        <article class="kpi-tarjeta">
+          <span class="kpi-etiqueta">Tareas pendientes</span>
+          <strong class="gt-num">{{ estadisticas.tareas.pendientes }}</strong>
+        </article>
+
+      </section>
+
+      <section class="panel-grafico">
+
+        <div class="panel-titulo">
+          <h2>Cuentas por rol</h2>
+          <span>{{ estadisticas.usuarios.estudiante + estadisticas.usuarios.profesor + estadisticas.usuarios.admin }} en total</span>
+        </div>
+
+        <div class="barras-roles">
+
+          @for (barra of barrasRoles; track barra.etiqueta) {
+            <div class="fila-barra-rol">
+
+              <span class="etiqueta-barra">{{ barra.etiqueta }}</span>
+
+              <div class="pista-barra">
+                <div
+                  class="relleno-barra {{ barra.claseColor }}"
+                  [style.width.%]="(barra.valor / maxUsuariosPorRol) * 100">
+                </div>
+              </div>
+
+              <span class="valor-barra">{{ barra.valor }}</span>
+
+            </div>
+          }
+
+        </div>
+
+      </section>
+
+      <section class="panel-grafico">
+
+        <div class="panel-titulo">
+          <h2>Progreso de tareas por materia</h2>
+          <span>{{ estadisticas.por_materia.length }} materias</span>
+        </div>
+
+        @if (estadisticas.por_materia.length === 0) {
+          <div class="estado-vacio">
+            Todavía no hay materias registradas.
+          </div>
+        } @else {
+          <div class="barras-materias">
+
+            @for (materia of estadisticas.por_materia; track materia.id) {
+              <div class="fila-barra-materia">
+
+                <div class="cabecera-barra-materia">
+                  <span class="nombre-materia">{{ materia.nombre }}</span>
+
+                  <span class="conteo-materia">
+                    {{ materia.completadas }}/{{ totalMateria(materia) }}
+                    tareas
+                  </span>
+                </div>
+
+                <div class="pista-barra">
+                  @if (totalMateria(materia) > 0) {
+                    <div
+                      class="relleno-barra color-progreso"
+                      [style.width.%]="porcentajeCompletadas(materia)">
+                    </div>
+                  } @else {
+                    <span class="sin-tareas">Sin tareas</span>
+                  }
+                </div>
+
+              </div>
+            }
+
+          </div>
+        }
+
+      </section>
+
+    }
+
+    <section class="panel-cuentas">
+
+      <div class="presentacion-cuentas">
+        <span class="gt-eyebrow">Cuentas</span>
+        <h2>Gestionar cuentas del sistema</h2>
+        <p>
+          Crea o elimina accesos para estudiantes, profesores
+          y otros administradores.
+        </p>
+      </div>
+
+      <app-gestion-estudiantes
+        (aulaSeleccionada)="verAula($event)">
+      </app-gestion-estudiantes>
+
+    </section>
+
+  </main>
+
+</ion-content>

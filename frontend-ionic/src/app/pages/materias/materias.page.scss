@@ -418,22 +418,3 @@ ion-modal.materia-form-modal::part(content) {
   font-weight: 700;
   text-transform: none;
 }
-
-ion-modal.gestion-estudiantes-modal {
-  --width: 100%;
-  --height: 94%;
-  --border-radius: 20px 20px 0 0;
-}
-
-ion-modal.gestion-estudiantes-modal::part(content) {
-  background: #f7f8fa;
-  color-scheme: light;
-}
-
-@media (min-width: 700px) {
-  ion-modal.gestion-estudiantes-modal {
-    --width: 680px;
-    --height: 780px;
-    --border-radius: 18px;
-  }
-}
