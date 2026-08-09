@@ -1,42 +1,27 @@
 name: gestortareas
 
 services:
-  db:
-    image: postgres:16-alpine
-    container_name: gestortareas_db
-    environment:
-      POSTGRES_USER: gestortareas_user
-      POSTGRES_PASSWORD: gestortareas_pass
-      POSTGRES_DB: gestortareas_db
-    volumes:
-      - db_data:/var/lib/postgresql/data
-      - ./db/init.sql:/docker-entrypoint-initdb.d/init.sql
-    ports:
-      - "5432:5432"
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U gestortareas_user -d gestortareas_db"]
-      interval: 5s
-      timeout: 5s
-      retries: 5
-
   backend:
-    build: ./backend
+    image: jsnarvaezl/gestortareas-backend:latest
     container_name: gestortareas_backend
+    restart: unless-stopped
+    env_file:
+      - .env
     environment:
-      DB_HOST: db
-      DB_PORT: 5432
-      DB_USER: gestortareas_user
-      DB_PASSWORD: gestortareas_pass
-      DB_NAME: gestortareas_db
       PORT: 3000
     volumes:
       - uploads_data:/app/uploads
-    depends_on:
-      db:
-        condition: service_healthy
     ports:
       - "3001:3000"
 
+  frontend:
+    image: jsnarvaezl/gestortareas-frontend:latest
+    container_name: gestortareas_frontend
+    restart: unless-stopped
+    depends_on:
+      - backend
+    ports:
+      - "8081:80"
+
 volumes:
-  db_data:
   uploads_data:
