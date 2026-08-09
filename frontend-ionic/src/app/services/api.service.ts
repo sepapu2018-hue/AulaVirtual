@@ -22,6 +22,32 @@ export interface Profesor {
   correo: string;
 }
 
+export interface Administrador {
+  id: number;
+  nombre: string;
+  correo: string;
+}
+
+export interface EstadisticasAdmin {
+  usuarios: {
+    admin: number;
+    profesor: number;
+    estudiante: number;
+  };
+  materias: number;
+  tareas: {
+    total: number;
+    completadas: number;
+    pendientes: number;
+  };
+  por_materia: {
+    id: number;
+    nombre: string;
+    completadas: number;
+    pendientes: number;
+  }[];
+}
+
 export interface LoginResponse {
   token: string;
   usuario: Usuario;
@@ -364,6 +390,70 @@ export class ApiService {
 
     return this.http.delete(
       `${this.apiUrl}/usuarios/${profesorId}`,
+      { headers }
+    );
+  }
+
+  obtenerAdministradores(): Observable<Administrador[]> {
+    const token = this.obtenerToken();
+
+    const headers = new HttpHeaders({
+      Authorization: `Bearer ${token}`
+    });
+
+    return this.http.get<Administrador[]>(
+      `${this.apiUrl}/usuarios?rol=admin`,
+      { headers }
+    );
+  }
+
+  crearAdministrador(
+    datos: {
+      nombre: string;
+      correo: string;
+      password: string;
+    }
+  ): Observable<Administrador> {
+    const token = this.obtenerToken();
+
+    const headers = new HttpHeaders({
+      Authorization: `Bearer ${token}`
+    });
+
+    return this.http.post<Administrador>(
+      `${this.apiUrl}/usuarios`,
+      {
+        ...datos,
+        rol: 'admin'
+      },
+      { headers }
+    );
+  }
+
+  eliminarAdministrador(
+    administradorId: number
+  ): Observable<unknown> {
+    const token = this.obtenerToken();
+
+    const headers = new HttpHeaders({
+      Authorization: `Bearer ${token}`
+    });
+
+    return this.http.delete(
+      `${this.apiUrl}/usuarios/${administradorId}`,
+      { headers }
+    );
+  }
+
+  obtenerEstadisticasAdmin(): Observable<EstadisticasAdmin> {
+    const token = this.obtenerToken();
+
+    const headers = new HttpHeaders({
+      Authorization: `Bearer ${token}`
+    });
+
+    return this.http.get<EstadisticasAdmin>(
+      `${this.apiUrl}/admin/estadisticas`,
       { headers }
     );
   }

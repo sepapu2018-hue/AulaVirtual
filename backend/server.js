@@ -136,8 +136,56 @@ app.use('/api/tareas', requireAuth);
 app.use('/api/anuncios', requireAuth);
 app.use('/api/usuarios', requireAuth);
 app.use('/api/comentarios', requireAuth);
+app.use('/api/admin', requireAuth);
 
-const ROLES_GESTIONABLES = ['estudiante', 'profesor'];
+const ROLES_GESTIONABLES = ['estudiante', 'profesor', 'admin'];
+
+app.get('/api/admin/estadisticas', requireAdmin, async (req, res) => {
+  try {
+    const usuariosPorRol = await pool.query(
+      'SELECT rol, COUNT(*)::int AS total FROM usuarios GROUP BY rol'
+    );
+
+    const conteoRoles = { admin: 0, profesor: 0, estudiante: 0 };
+    usuariosPorRol.rows.forEach((fila) => {
+      conteoRoles[fila.rol] = fila.total;
+    });
+
+    const materiasTotal = await pool.query(
+      'SELECT COUNT(*)::int AS total FROM materias'
+    );
+
+    const tareas = await pool.query(`
+      SELECT
+        COUNT(*)::int AS total,
+        COUNT(*) FILTER (WHERE completada)::int AS completadas,
+        COUNT(*) FILTER (WHERE NOT completada)::int AS pendientes
+      FROM tareas
+    `);
+
+    const porMateria = await pool.query(`
+      SELECT
+        m.id, m.nombre,
+        COUNT(t.id) FILTER (WHERE t.completada)::int AS completadas,
+        COUNT(t.id) FILTER (WHERE NOT t.completada)::int AS pendientes
+      FROM materias m
+      LEFT JOIN tareas t ON t.materia_id = m.id
+      GROUP BY m.id, m.nombre
+      ORDER BY m.nombre
+      LIMIT 10
+    `);
+
+    res.json({
+      usuarios: conteoRoles,
+      materias: materiasTotal.rows[0].total,
+      tareas: tareas.rows[0],
+      por_materia: porMateria.rows
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Error al obtener las estadísticas' });
+  }
+});
 
 app.get('/api/usuarios', requireAdmin, async (req, res) => {
   const rol = ROLES_GESTIONABLES.includes(req.query.rol) ? req.query.rol : 'estudiante';
@@ -174,10 +222,25 @@ app.post('/api/usuarios', requireAdmin, async (req, res) => {
 });
 
 app.delete('/api/usuarios/:id', requireAdmin, async (req, res) => {
+  const idObjetivo = Number(req.params.id);
+
+  if (idObjetivo === req.usuario.id) {
+    return res.status(400).json({ error: 'No puedes eliminar tu propia cuenta' });
+  }
+
   try {
+    const objetivo = await pool.query('SELECT rol FROM usuarios WHERE id = $1', [idObjetivo]);
+
+    if (objetivo.rows.length > 0 && objetivo.rows[0].rol === 'admin') {
+      const totalAdmins = await pool.query("SELECT COUNT(*)::int AS total FROM usuarios WHERE rol = 'admin'");
+      if (totalAdmins.rows[0].total <= 1) {
+        return res.status(400).json({ error: 'No puedes eliminar al último administrador del sistema' });
+      }
+    }
+
     const result = await pool.query(
       'DELETE FROM usuarios WHERE id = $1 AND rol = ANY($2) RETURNING id',
-      [req.params.id, ROLES_GESTIONABLES]
+      [idObjetivo, ROLES_GESTIONABLES]
     );
     if (result.rows.length === 0) return res.status(404).json({ error: 'Cuenta no encontrada' });
     res.json({ message: 'Cuenta eliminada' });

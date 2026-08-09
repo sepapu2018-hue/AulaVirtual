@@ -27,6 +27,21 @@ export const authGuard: CanActivateFn = () => {
   return true;
 };
 
+export const adminGuard: CanActivateFn = () => {
+  const apiService = inject(ApiService);
+  const router = inject(Router);
+
+  const usuario = apiService.obtenerUsuario();
+
+  if (!usuario || usuario.rol !== 'admin') {
+    return router.createUrlTree([
+      '/materias'
+    ]);
+  }
+
+  return true;
+};
+
 export const guestGuard: CanActivateFn = () => {
   const apiService = inject(ApiService);
   const router = inject(Router);

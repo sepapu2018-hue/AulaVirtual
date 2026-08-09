@@ -114,9 +114,9 @@
         type="button"
         fill="outline"
         class="boton-gestionar-estudiantes"
-        (click)="abrirGestionEstudiantes()">
+        (click)="abrirDashboard()">
 
-        Gestionar cuentas
+        Panel de administración
 
       </ion-button>
     }
@@ -324,19 +324,3 @@
   position="bottom"
   (didDismiss)="toastAbierto = false">
 </ion-toast>
-
-<ion-modal
-  class="gestion-estudiantes-modal"
-  [isOpen]="mostrarGestionEstudiantes"
-  (didDismiss)="cerrarGestionEstudiantes()">
-
-  <ng-template>
-
-    <app-gestion-estudiantes
-      (cerrarModal)="cerrarGestionEstudiantes()"
-      (aulaSeleccionada)="entrarModoAula($event)">
-    </app-gestion-estudiantes>
-
-  </ng-template>
-
-</ion-modal>
