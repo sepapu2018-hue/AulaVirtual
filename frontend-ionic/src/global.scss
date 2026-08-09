@@ -53,6 +53,18 @@ ion-app {
   font-family: var(--gt-font-body);
 }
 
+/*
+ * Safari (iOS) y Chrome (Android) muestran/ocultan su barra de
+ * navegación al hacer scroll, pero la altura "100%" heredada de
+ * html/body no siempre se recalcula a tiempo: deja un hueco en
+ * blanco del color de fondo por defecto en la parte baja de la
+ * pantalla. "100dvh" sigue siempre la altura real visible.
+ */
+.ion-page {
+  height: 100%;
+  height: 100dvh;
+}
+
 h1,
 h2,
 h3,

@@ -9,6 +9,15 @@
 
 :host {
   color-scheme: light;
+
+  /* Respaldo: si algún dispositivo deja un resquicio entre el
+     viewport real y el alto calculado, que se vea el mismo
+     degradado y no el gris por defecto de la app. */
+  background: linear-gradient(
+    155deg,
+    var(--gt-ink-800) 0%,
+    var(--gt-ink-900) 100%
+  );
 }
 
 ion-content {
