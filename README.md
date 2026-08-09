@@ -1,23 +1,43 @@
-# GestorTareas - CRUD con Docker Compose
+# GestorTareas (AulaVirtual)
 
-Aplicación de tres capas (frontend, backend, base de datos) para gestionar tareas (Crear, Leer, Actualizar, Eliminar).
+Aplicación de aula virtual con roles de administrador, profesor y estudiante:
+gestión de materias, tareas, anuncios, calificaciones y cuentas de usuario.
+
+Stack:
+- **Backend**: Node.js + Express + PostgreSQL, con autenticación JWT.
+- **Frontend**: Ionic + Angular (`frontend-ionic/`).
+- **Base de datos**: PostgreSQL (vía Docker).
 
 ## Requisitos
-- Docker Desktop instalado y en ejecución.
 
-## Cómo levantar el proyecto
+- Docker Desktop instalado y en ejecución (para la base de datos y el backend).
+- Node.js y npm (para correr el frontend Ionic).
+
+## Cómo levantar el proyecto en desarrollo
+
+**1. Base de datos y backend** (con Docker):
 
 ```bash
-docker compose up --build
+docker compose up -d --build
 ```
 
-Esto construye las imágenes de `frontend` y `backend` (autoría propia) y descarga la imagen oficial de `postgres`, luego levanta los 3 contenedores.
+Esto levanta:
+- `gestortareas_db` — PostgreSQL en `localhost:5432`.
+- `gestortareas_backend` — API REST en `http://localhost:3001/api`.
 
-## URLs
+**2. Frontend Ionic** (por separado, con `ng serve`):
 
-- Frontend (interfaz web): http://localhost:8080
-- Backend (API REST):      http://localhost:3001/api/tareas
-- Base de datos (Postgres): localhost:5432 (usuario: `gestortareas_user`, password: `gestortareas_pass`, db: `gestortareas_db`)
+```bash
+cd frontend-ionic
+npm install
+npx ng serve --port 8100
+```
+
+La app queda disponible en `http://localhost:8100`.
+
+## Cuenta de administrador semilla
+
+Correo: `admin@gestortareas.com` · Contraseña: `admin123`
 
 ## Ver los contenedores corriendo
 
@@ -25,12 +45,12 @@ Esto construye las imágenes de `frontend` y `backend` (autoría propia) y desca
 docker ps
 ```
 
-Deben aparecer: `gestortareas_frontend`, `gestortareas_backend`, `gestortareas_db`.
+Deben aparecer: `gestortareas_backend`, `gestortareas_db`.
 
 ## Ver los datos directamente en la base de datos
 
 ```bash
-docker exec -it gestortareas_db psql -U gestortareas_user -d gestortareas_db -c "SELECT * FROM tareas;"
+docker exec -it gestortareas_db psql -U gestortareas_user -d gestortareas_db -c "SELECT * FROM materias;"
 ```
 
 ## Detener todo
@@ -44,23 +64,23 @@ docker compose down
 ## Estructura del proyecto
 
 ```
-DEBERCOMPUTO/
+PROYECTO INTEGRADOR/
 ├── docker-compose.yml
 ├── db/
-│   └── init.sql          # crea la tabla "tareas" y un dato de ejemplo
+│   └── init.sql            # esquema de la base de datos y datos semilla
 ├── backend/
 │   ├── Dockerfile
 │   ├── package.json
-│   ├── server.js          # API REST (Express)
+│   ├── server.js           # API REST (Express)
 │   └── db.js
-├── frontend/
-│   ├── Dockerfile
-│   ├── nginx.conf         # sirve el sitio y redirige /api/ al backend
-│   └── public/
-│       ├── index.html
-│       ├── style.css
-│       └── script.js
-└── informe/
-    ├── INFORME_TECNICO.md
-    └── capturas/           # aquí van las imágenes del informe
+└── frontend-ionic/         # app Ionic + Angular
+    └── src/
+        └── app/
 ```
+
+## Despliegue a producción
+
+El push a la rama `main` dispara el workflow de GitHub Actions
+(`.github/workflows/docker.yml`), que construye y publica las imágenes de
+`backend` y `frontend-ionic` en Docker Hub, y despliega por SSH en el
+servidor de producción.
