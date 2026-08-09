@@ -1,0 +1,46 @@
+name: Construir y subir imagenes GestorTareas
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  docker:
+
+    runs-on: ubuntu-latest
+
+    steps:
+
+      - name: Descargar código
+        uses: actions/checkout@v4
+
+      - name: Login Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
+      - name: Construir imagen backend
+        run: docker build -t jsnarvaezl/gestortareas-backend:latest ./backend
+
+      - name: Subir imagen backend
+        run: docker push jsnarvaezl/gestortareas-backend:latest
+
+      - name: Construir imagen frontend
+        run: docker build -t jsnarvaezl/gestortareas-frontend:latest ./frontend-ionic
+
+      - name: Subir imagen frontend
+        run: docker push jsnarvaezl/gestortareas-frontend:latest
+
+      - name: Desplegar en EC2
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: 3.16.0.27
+          username: ubuntu
+          key: ${{ secrets.EC2_SSH_KEY }}
+          script: |
+            cd ~/gestortareas
+            curl -fsSL -o docker-compose.yml https://raw.githubusercontent.com/sepapu2018-hue/gestordetareraspractica-/main/docker-compose.yml
+            sudo docker compose pull
+            sudo docker compose up -d

@@ -1,5 +1,7 @@
 const express = require('express');
 const cors = require('cors');
+const helmet = require('helmet');
+const rateLimit = require('express-rate-limit');
 const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
@@ -7,9 +9,25 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const pool = require('./db');
 
+const ORIGENES_PERMITIDOS = (process.env.ALLOWED_ORIGINS || '')
+  .split(',')
+  .map((origen) => origen.trim())
+  .filter(Boolean);
+
 const app = express();
-app.use(cors());
+app.use(helmet());
+app.use(cors({
+  origin: ORIGENES_PERMITIDOS.length > 0 ? ORIGENES_PERMITIDOS : true
+}));
 app.use(express.json());
+
+const limitadorLogin = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 10,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: 'Demasiados intentos de inicio de sesión. Intenta de nuevo más tarde.' }
+});
 
 const PORT = process.env.PORT || 3000;
 const PRIORIDADES_VALIDAS = ['alta', 'media', 'baja'];
@@ -26,9 +44,26 @@ const storage = multer.diskStorage({
   }
 });
 
+const TIPOS_ARCHIVO_PERMITIDOS = [
+  'application/pdf',
+  'application/msword',
+  'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+  'image/png',
+  'image/jpeg',
+  'image/webp'
+];
+
 const upload = multer({
   storage,
-  limits: { fileSize: 5 * 1024 * 1024 }
+  limits: { fileSize: 5 * 1024 * 1024 },
+  fileFilter: (req, file, cb) => {
+    if (!TIPOS_ARCHIVO_PERMITIDOS.includes(file.mimetype)) {
+      const error = new Error('Tipo de archivo no permitido. Solo se aceptan PDF, Word e imágenes.');
+      error.esTipoArchivoInvalido = true;
+      return cb(error);
+    }
+    cb(null, true);
+  }
 });
 
 app.use('/api/archivos', express.static(UPLOADS_DIR));
@@ -114,7 +149,7 @@ async function entregaBloqueada(req, tareaId) {
 
 app.get('/api/health', (req, res) => res.json({ status: 'ok' }));
 
-app.post('/api/auth/login', async (req, res) => {
+app.post('/api/auth/login', limitadorLogin, async (req, res) => {
   const { correo, password } = req.body;
   if (!correo || !password) return res.status(400).json({ error: 'Correo y contraseña son obligatorios' });
   try {
@@ -801,6 +836,9 @@ app.put('/api/tareas/:id/notas', requireAdminOProfesor, async (req, res) => {
 app.use((err, req, res, next) => {
   if (err instanceof multer.MulterError) {
     return res.status(400).json({ error: 'El archivo supera el tamaño máximo permitido (5MB)' });
+  }
+  if (err && err.esTipoArchivoInvalido) {
+    return res.status(400).json({ error: err.message });
   }
   console.error(err);
   res.status(500).json({ error: 'Error interno del servidor' });
