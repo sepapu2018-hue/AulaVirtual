@@ -1,12 +1,15 @@
-# GestorTareas (AulaVirtual)
+# GestorTareas - Aula Virtual
 
 Aplicación de aula virtual con roles de **administrador**, **profesor** y
 **estudiante**: gestión de materias, tareas, anuncios, calificaciones y
 cuentas de usuario.
 
+**Autores:** Jose Narvaez, Jordan Castillo
+
 Stack:
 
-- **Backend**: Node.js + Express + PostgreSQL, autenticación con JWT.
+- **Backend**: Node.js + Express + PostgreSQL, autenticación con JWT,
+  organizado en capas (`routes` → `controllers` → `services` → `repositories`).
 - **Frontend**: Ionic + Angular (`frontend-ionic/`).
 - **Base de datos**: PostgreSQL (local en desarrollo, Amazon RDS en producción).
 
@@ -14,62 +17,131 @@ Stack:
 
 - Docker Desktop instalado y en ejecución.
 - Node.js y npm (para correr el frontend Ionic en desarrollo).
+- Git.
 
-## Configuración
+## Instalación y ejecución en local
 
-1. Copia `.env.example` a `.env` y completa las variables:
-   - `DB_HOST`, `DB_PORT`, `DB_USER`, `DB_PASSWORD`, `DB_NAME`: credenciales de conexión a PostgreSQL.
-   - `DB_SSL`: pon `true` al conectar contra Amazon RDS; déjalo vacío para una base local.
-   - `JWT_SECRET`: cadena aleatoria larga usada para firmar los tokens de sesión.
-   - `ALLOWED_ORIGINS`: orígenes permitidos a llamar la API, separados por coma.
+Pasos, en orden, para clonar el proyecto y dejarlo corriendo:
 
-   El archivo `.env` **no se sube al repositorio** (está en `.gitignore`).
+1. Clonar el repositorio y entrar a la carpeta:
 
-2. Si es la primera vez que usas la base de datos, crea el esquema con
-   `db/init.sql`, y opcionalmente `db/crear_usuario_app.sql` para un usuario
-   de aplicación con privilegios limitados (recomendado en vez del usuario
-   maestro).
+   ```bash
+   git clone https://github.com/sepapu2018-hue/AulaVirtual.git
+   cd AulaVirtual
+   ```
 
-## Desarrollo local
+2. Levantar la base de datos y el backend con Docker:
 
-**1. Base de datos y backend**, construidos desde el código fuente:
+   ```bash
+   docker compose -f docker-compose.dev.yml up -d --build
+   ```
+
+   Este comando construye la imagen del backend, crea el contenedor de
+   PostgreSQL (`gestortareas_db`, puerto `5432`) y, la primera vez que se
+   crea el volumen de datos, ejecuta `db/init.sql` de forma automática:
+   crea las tablas y las tres cuentas de prueba. El backend queda
+   disponible en `http://localhost:3001/api`.
+
+   Para este modo no hace falta crear un archivo `.env`: las variables
+   de conexión ya están definidas dentro de `docker-compose.dev.yml`.
+
+3. Levantar el frontend, en otra terminal:
+
+   ```bash
+   cd frontend-ionic
+   npm install
+   npm start
+   ```
+
+   La app queda disponible en `http://localhost:8100`.
+
+4. Entrar con cualquiera de las cuentas de prueba (ver abajo).
+
+Para reiniciar la base de datos desde cero (borra los datos guardados):
 
 ```bash
+docker compose -f docker-compose.dev.yml down -v
 docker compose -f docker-compose.dev.yml up -d --build
 ```
 
-Levanta `gestortareas_db` (PostgreSQL en `localhost:5432`) y
-`gestortareas_backend` (API REST en `http://localhost:3001/api`).
+### Cuentas de prueba (creadas por `db/init.sql`)
 
-**2. Frontend Ionic**, por separado:
+Una por rol, para probar los tres flujos de la app:
 
-```bash
-cd frontend-ionic
-npm install
-npx ng serve --port 8100
-```
+| Rol | Correo | Contraseña |
+|---|---|---|
+| Administrador | `admin@gestortareas.com` | `admin123` |
+| Profesor | `profesor.demo@gestortareas.com` | `profesor123` |
+| Estudiante | `estudiante.demo@gestortareas.com` | `estudiante123` |
 
-La app queda en `http://localhost:8100`.
-
-### Cuenta de administrador semilla
-
-Correo: `admin@gestortareas.com` · Contraseña: `admin123`
-(creada por `db/init.sql`; cámbiala si el proyecto se usa más allá de una demo).
+Cámbialas si el proyecto se usa más allá de una demo.
 
 ## Producción
 
 `docker-compose.yml` (en la raíz, sin sufijo) es la plantilla de producción:
-usa las imágenes ya construidas en Docker Hub y las variables de `.env`, sin
-levantar una base de datos local (se conecta a RDS).
+usa las imágenes ya construidas en Docker Hub y se conecta a una base de
+datos externa (Amazon RDS) en vez de levantar PostgreSQL en un contenedor.
 
-```bash
-docker compose up -d
-```
+1. Copiar `.env.example` a `.env` y completar las variables:
+   - `DB_HOST`, `DB_PORT`, `DB_USER`, `DB_PASSWORD`, `DB_NAME`: credenciales de conexión a PostgreSQL.
+   - `DB_SSL`: `true` para conectar contra Amazon RDS.
+   - `JWT_SECRET`: cadena aleatoria larga usada para firmar los tokens de sesión.
+   - `ALLOWED_ORIGINS`: orígenes permitidos a llamar la API, separados por coma.
+
+   El archivo `.env` no se sube al repositorio (está en `.gitignore`).
+
+2. Si la base de datos es nueva, crear el esquema con `db/init.sql` y,
+   opcionalmente, `db/crear_usuario_app.sql` para un usuario de base de
+   datos con privilegios limitados, en vez de usar el usuario maestro.
+
+3. Levantar los contenedores:
+
+   ```bash
+   docker compose up -d
+   ```
 
 El push a la rama `main` dispara el workflow de GitHub Actions
 (`.github/workflows/docker.yml`), que construye y publica las imágenes de
 `backend` y `frontend-ionic` en Docker Hub, y despliega por SSH en el
 servidor de producción.
+
+## Arquitectura del backend
+
+El backend está organizado en capas, cada una con una responsabilidad única:
+
+```
+routes → controllers → services → repositories → base de datos
+```
+
+- **`routes/`**: define las URLs y qué middleware de permisos aplica.
+- **`controllers/`**: lee la petición HTTP y llama al service correspondiente.
+- **`services/`**: reglas de negocio y permisos por rol (nada de HTTP ni SQL aquí).
+- **`repositories/`**: todas las consultas SQL, sin lógica de negocio.
+
+Diagramas ArchiMate (arquitectura tecnológica y de software) en
+`backend/docs/architecture/`.
+
+## Pruebas
+
+Pruebas unitarias con Jest sobre la capa `services/`, simulando (`mock`) los
+`repositories`. No usan una base de datos real.
+
+```bash
+cd backend
+npm test              # correr las pruebas
+npm run test:coverage # correr las pruebas + reporte de cobertura
+```
+
+102 pruebas, cobertura ≥98% en la capa de servicios.
+
+## Documentación de la API
+
+- `backend/docs/API.md`: guía en Markdown con cada endpoint, parámetros,
+  respuestas, errores y ejemplos con `curl`.
+- `backend/docs/openapi.yaml`: especificación OpenAPI 3.0.
+- `backend/docs/GestorTareas.postman_collection.json`: colección de Postman.
+- Swagger UI en vivo: `http://localhost:3001/api/docs` (o el dominio de
+  producción con el mismo path).
 
 ## Seguridad
 
@@ -113,8 +185,22 @@ PROYECTO INTEGRADOR/
 ├── backend/
 │   ├── Dockerfile
 │   ├── package.json
-│   ├── server.js              # API REST (Express)
-│   └── db.js
+│   ├── server.js              # arranca src/app.js (4 líneas)
+│   ├── src/
+│   │   ├── app.js              # arma la app de Express
+│   │   ├── config/             # variables de entorno, conexión a la BD
+│   │   ├── middlewares/        # auth, seguridad, subida de archivos, errores
+│   │   ├── routes/             # rutas por dominio (auth, materias, tareas...)
+│   │   ├── controllers/        # leen la petición y llaman al service
+│   │   ├── services/           # reglas de negocio y permisos por rol
+│   │   ├── repositories/       # consultas SQL
+│   │   └── utils/
+│   ├── tests/unit/services/    # pruebas Jest (mocks de repositories)
+│   └── docs/
+│       ├── API.md               # documentación de la API
+│       ├── openapi.yaml         # spec OpenAPI 3
+│       ├── GestorTareas.postman_collection.json
+│       └── architecture/        # diagramas ArchiMate
 ├── frontend-ionic/            # app Ionic + Angular (único frontend del proyecto)
 │   ├── Dockerfile
 │   ├── nginx.conf

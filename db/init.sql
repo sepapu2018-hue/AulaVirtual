@@ -73,9 +73,12 @@ CREATE TABLE IF NOT EXISTS notas (
     UNIQUE(tarea_id, usuario_id)
 );
 
--- Usuario administrador semilla. Correo: admin@gestortareas.com / Contraseña: admin123
+-- Usuarios semilla para desarrollo local (ver README.md para el detalle
+-- de credenciales de cada rol).
 INSERT INTO usuarios (nombre, correo, password_hash, rol) VALUES
-('Administrador', 'admin@gestortareas.com', '$2a$10$VfXTSqb66qx06rBkL2dZQO2EtCrjw6QH1YIqfMSExhjh4SPxJ9ysi', 'admin');
+('Administrador', 'admin@gestortareas.com', '$2a$10$VfXTSqb66qx06rBkL2dZQO2EtCrjw6QH1YIqfMSExhjh4SPxJ9ysi', 'admin'),
+('Profesor Demo', 'profesor.demo@gestortareas.com', '$2a$10$z0Alwud7WaTwjUf3pti3Z.Rf63tA73GYIGuKd1AJtuzPHA.n.1GA.', 'profesor'),
+('Estudiante Demo', 'estudiante.demo@gestortareas.com', '$2a$10$VJnMZEFYDD8lPJFqrKaIx.KoqEpK3XnlgYWX3jmlUnOytiIkczsmy', 'estudiante');
 
 INSERT INTO materias (usuario_id, nombre, profesor, orden) VALUES
 (1, 'Arquitectura de Software', 'Ing. Patricio Alvear', 1),
