@@ -29,6 +29,7 @@ import { ApiService, Materia, Tarea, TareaDetalle, Anuncio, EstadisticasTareas, 
 import { TareaFormComponent, TareaFormularioDatos } from '../../components/tarea-form/tarea-form.component';
 import { TareaDetalleComponent } from '../../components/tarea-detalle/tarea-detalle.component';
 import { MateriaEstudiantesComponent } from '../../components/materia-estudiantes/materia-estudiantes.component';
+import { NotasMateriaComponent } from '../../components/notas-materia/notas-materia.component';
 import { AlertController } from '@ionic/angular';
 
 type FiltroTareas =
@@ -61,7 +62,8 @@ type FiltroTareas =
     TareaFormComponent,
     IonToast,
     TareaDetalleComponent,
-    MateriaEstudiantesComponent
+    MateriaEstudiantesComponent,
+    NotasMateriaComponent
   ]
 })
 
@@ -84,6 +86,7 @@ export class TareasPage implements OnInit {
   tareaEnEdicion: Tarea | null = null;
 
   mostrarEstudiantesMateria = false;
+  mostrarNotasMateria = false;
 
   mostrarDetalle = false;
   tareaSeleccionada: TareaDetalle | null = null;
@@ -556,6 +559,14 @@ export class TareasPage implements OnInit {
 
   cerrarEstudiantesMateria(): void {
     this.mostrarEstudiantesMateria = false;
+  }
+
+  abrirNotasMateria(): void {
+    this.mostrarNotasMateria = true;
+  }
+
+  cerrarNotasMateria(): void {
+    this.mostrarNotasMateria = false;
   }
 
   abrirDetalleTarea(tarea: Tarea): void {

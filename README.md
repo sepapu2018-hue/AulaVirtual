@@ -145,7 +145,6 @@ npm run test:coverage # correr las pruebas + reporte de cobertura
 
 ## Seguridad
 
-- Rate limiting en el login (10 intentos cada 15 minutos por IP).
 - CORS restringido a los orígenes listados en `ALLOWED_ORIGINS`.
 - Cabeceras HTTP estándar de seguridad vía `helmet`.
 - Subida de archivos validada por tipo (solo PDF, Word e imágenes) y tamaño (máx. 5MB).

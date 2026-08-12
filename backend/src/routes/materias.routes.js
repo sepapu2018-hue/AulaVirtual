@@ -1,6 +1,7 @@
 const express = require('express');
 const materiasController = require('../controllers/materias.controller');
 const anunciosController = require('../controllers/anuncios.controller');
+const notasController = require('../controllers/notas.controller');
 const { requireAdmin, requireAdminOProfesor } = require('../middlewares/auth');
 
 const router = express.Router();
@@ -18,5 +19,8 @@ router.delete('/:id/estudiantes/:usuarioId', requireAdmin, materiasController.de
 
 router.get('/:id/anuncios', anunciosController.listarPorMateria);
 router.post('/:id/anuncios', requireAdminOProfesor, anunciosController.crear);
+
+router.get('/:id/notas', requireAdminOProfesor, notasController.listarPorMateria);
+router.get('/:id/mis-notas', notasController.misNotas);
 
 module.exports = router;

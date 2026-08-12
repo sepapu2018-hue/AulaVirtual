@@ -19,4 +19,25 @@ async function guardar(tareaId, usuarioId, nota, comentario) {
   return r.rows[0];
 }
 
-module.exports = { buscarPorTareaYUsuario, guardar };
+// Una fila por cada combinacion estudiante+tarea de la materia, con la
+// nota (0-10) si ya fue calificada. Sirve de base para calcular la nota
+// final de cada estudiante sobre 50 puntos.
+async function listarPorMateria(materiaId) {
+  const r = await pool.query(`
+    SELECT u.id AS usuario_id, u.nombre AS estudiante_nombre, u.correo AS estudiante_correo,
+      t.id AS tarea_id, t.titulo AS tarea_titulo,
+      n.nota
+    FROM (
+      SELECT usuario_id FROM materias WHERE id = $1
+      UNION
+      SELECT usuario_id FROM inscripciones WHERE materia_id = $1
+    ) miembros
+    JOIN usuarios u ON u.id = miembros.usuario_id AND u.rol = 'estudiante'
+    JOIN tareas t ON t.materia_id = $1
+    LEFT JOIN notas n ON n.tarea_id = t.id AND n.usuario_id = u.id
+    ORDER BY u.nombre, t.id
+  `, [materiaId]);
+  return r.rows;
+}
+
+module.exports = { buscarPorTareaYUsuario, guardar, listarPorMateria };

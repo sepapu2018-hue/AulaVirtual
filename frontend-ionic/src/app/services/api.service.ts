@@ -139,6 +139,33 @@ export interface Comentario {
   autor_rol: string;
 }
 
+export interface DetalleNotaTarea {
+  tarea_id: number;
+  tarea_titulo: string;
+  nota: number | null;
+  valor_tarea: number;
+  nota_sobre_50: number | null;
+}
+
+export interface NotaMateriaEstudiante {
+  usuario_id: number;
+  nombre: string;
+  correo: string;
+  detalle: DetalleNotaTarea[];
+  tareas_calificadas: number;
+  nota_final: number;
+  total_tareas: number;
+  valor_tarea: number;
+  nota_maxima: number;
+}
+
+export interface ResumenNotasMateria {
+  total_tareas: number;
+  valor_tarea: number;
+  nota_maxima: number;
+  estudiantes: NotaMateriaEstudiante[];
+}
+
 export interface Anuncio {
   id: number;
   materia_id: number;
@@ -663,6 +690,36 @@ export class ApiService {
         usuario_id: usuarioId,
         nota
       },
+      { headers }
+    );
+  }
+
+  obtenerNotasMateria(
+    materiaId: number
+  ): Observable<ResumenNotasMateria> {
+    const token = this.obtenerToken();
+
+    const headers = new HttpHeaders({
+      Authorization: `Bearer ${token}`
+    });
+
+    return this.http.get<ResumenNotasMateria>(
+      `${this.apiUrl}/materias/${materiaId}/notas`,
+      { headers }
+    );
+  }
+
+  obtenerMisNotas(
+    materiaId: number
+  ): Observable<NotaMateriaEstudiante> {
+    const token = this.obtenerToken();
+
+    const headers = new HttpHeaders({
+      Authorization: `Bearer ${token}`
+    });
+
+    return this.http.get<NotaMateriaEstudiante>(
+      `${this.apiUrl}/materias/${materiaId}/mis-notas`,
       { headers }
     );
   }

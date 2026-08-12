@@ -820,7 +820,8 @@ ion-modal.tarea-detalle-modal::part(content) {
   }
 }
 
-.boton-estudiantes-materia {
+.boton-estudiantes-materia,
+.boton-notas-materia {
   min-height: 38px;
   margin: 0;
 
@@ -835,7 +836,8 @@ ion-modal.tarea-detalle-modal::part(content) {
   text-transform: none;
 }
 
-ion-modal.estudiantes-materia-modal {
+ion-modal.estudiantes-materia-modal,
+ion-modal.notas-materia-modal {
   --width: 100%;
   --height: 92%;
   --border-radius: 20px 20px 0 0;
@@ -844,13 +846,15 @@ ion-modal.estudiantes-materia-modal {
     rgba(16, 24, 32, 0.2);
 }
 
-ion-modal.estudiantes-materia-modal::part(content) {
+ion-modal.estudiantes-materia-modal::part(content),
+ion-modal.notas-materia-modal::part(content) {
   background: #f7f8fa;
   color-scheme: light;
 }
 
 @media (min-width: 700px) {
-  ion-modal.estudiantes-materia-modal {
+  ion-modal.estudiantes-materia-modal,
+  ion-modal.notas-materia-modal {
     --width: 620px;
     --height: 720px;
     --border-radius: 18px;

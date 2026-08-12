@@ -1,0 +1,143 @@
+<ion-header>
+  <ion-toolbar>
+
+    <ion-title>
+      Notas
+    </ion-title>
+
+    <ion-buttons slot="end">
+      <ion-button type="button" (click)="cerrar()">
+        Cerrar
+      </ion-button>
+    </ion-buttons>
+
+  </ion-toolbar>
+</ion-header>
+
+<ion-content>
+
+  <div class="notas-contenedor">
+
+    <section class="presentacion">
+      <span class="gt-eyebrow">Notas</span>
+      <h1>{{ materiaNombre }}</h1>
+      <p>
+        Cada tarea reparte su valor sobre un total de
+        {{ resumen?.nota_maxima ?? misNotas?.nota_maxima ?? 50 }} puntos por materia.
+      </p>
+    </section>
+
+    @if (cargando) {
+      <div class="estado-cargando">
+        <ion-spinner name="crescent"></ion-spinner>
+        <span>Cargando notas...</span>
+      </div>
+    } @else if (mensajeError) {
+      <div class="estado-error">
+        <ion-text color="danger">
+          <p>{{ mensajeError }}</p>
+        </ion-text>
+      </div>
+    } @else if (esDocente) {
+
+      <ion-searchbar
+        [(ngModel)]="busqueda"
+        placeholder="Buscar estudiante por nombre o correo"
+        [debounce]="200"
+        class="buscador-notas">
+      </ion-searchbar>
+
+      @if (estudiantesFiltrados.length === 0) {
+        <div class="estado-vacio">
+          <p>No hay estudiantes que coincidan con la búsqueda.</p>
+        </div>
+      } @else {
+        <div class="lista-notas">
+          @for (estudiante of estudiantesFiltrados; track estudiante.usuario_id) {
+            <div class="tarjeta-estudiante">
+
+              <div class="cabecera-estudiante">
+                <div class="avatar-estudiante">
+                  {{ obtenerIniciales(estudiante.nombre) }}
+                </div>
+
+                <div class="datos-estudiante">
+                  <strong>{{ estudiante.nombre }}</strong>
+                  <span>{{ estudiante.correo }}</span>
+                </div>
+
+                <div class="nota-final">
+                  <span class="gt-num">{{ estudiante.nota_final }}</span>
+                  <small>/ {{ resumen?.nota_maxima }}</small>
+                </div>
+              </div>
+
+              <div class="detalle-tareas">
+                @if (estudiante.detalle.length === 0) {
+                  <p class="sin-tareas">Esta materia todavía no tiene tareas.</p>
+                } @else {
+                  @for (item of estudiante.detalle; track item.tarea_id) {
+                    <div class="fila-tarea">
+                      <span class="titulo-tarea">{{ item.tarea_titulo }}</span>
+                      <span class="valor-tarea">
+                        @if (item.nota === null) {
+                          Sin calificar
+                        } @else {
+                          {{ item.nota }}/10 · {{ item.nota_sobre_50 }} de {{ item.valor_tarea }}
+                        }
+                      </span>
+                    </div>
+                  }
+                }
+              </div>
+
+            </div>
+          }
+        </div>
+      }
+
+    } @else if (misNotas) {
+
+      <div class="tarjeta-resumen-propio">
+        <span class="gt-eyebrow">Tu nota en esta materia</span>
+
+        <div class="nota-propia">
+          <span class="gt-num">{{ misNotas.nota_final }}</span>
+          <small>/ {{ misNotas.nota_maxima }}</small>
+        </div>
+
+        <p class="progreso-texto">
+          {{ misNotas.tareas_calificadas }} de {{ misNotas.total_tareas }} tareas calificadas
+        </p>
+      </div>
+
+      @if (misNotas.detalle.length === 0) {
+        <div class="estado-vacio">
+          <p>Todavía no hay tareas calificadas en esta materia.</p>
+        </div>
+      } @else {
+        <div class="lista-notas">
+          <div class="tarjeta-estudiante">
+            <div class="detalle-tareas">
+              @for (item of misNotas.detalle; track item.tarea_id) {
+                <div class="fila-tarea">
+                  <span class="titulo-tarea">{{ item.tarea_titulo }}</span>
+                  <span class="valor-tarea">
+                    @if (item.nota === null) {
+                      Sin calificar
+                    } @else {
+                      {{ item.nota }}/10 · {{ item.nota_sobre_50 }} de {{ item.valor_tarea }}
+                    }
+                  </span>
+                </div>
+              }
+            </div>
+          </div>
+        </div>
+      }
+
+    }
+
+  </div>
+
+</ion-content>

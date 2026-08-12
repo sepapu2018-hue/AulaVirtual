@@ -67,6 +67,16 @@
           </ion-button>
         }
 
+        <ion-button
+          type="button"
+          fill="outline"
+          class="boton-notas-materia"
+          (click)="abrirNotasMateria()">
+
+          Notas
+
+        </ion-button>
+
       </div>
 
       <div class="hero-texto">
@@ -591,6 +601,27 @@
             cerrarEstudiantesMateria()
           ">
         </app-materia-estudiantes>
+      }
+
+    </ng-template>
+
+  </ion-modal>
+
+  <ion-modal
+    class="notas-materia-modal"
+    [isOpen]="mostrarNotasMateria"
+    (didDismiss)="cerrarNotasMateria()">
+
+    <ng-template>
+
+      @if (materia) {
+        <app-notas-materia
+          [materiaId]="materia.id"
+          [materiaNombre]="materia.nombre"
+          (cerrarModal)="
+            cerrarNotasMateria()
+          ">
+        </app-notas-materia>
       }
 
     </ng-template>
